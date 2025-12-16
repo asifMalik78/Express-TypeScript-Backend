@@ -406,6 +406,3 @@ npm run format:check
 6. **Testing** - Comprehensive test coverage
 7. **Documentation** - Well-documented code
 
-## License
-
-ISC
