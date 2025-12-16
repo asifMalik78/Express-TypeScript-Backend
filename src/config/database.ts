@@ -10,6 +10,12 @@ if (nodeEnv === 'development') {
   neonConfig.poolQueryViaFetch = true;
 }
 
+// For test environment, don't configure special endpoints
+if (nodeEnv === 'test') {
+  // Tests will use the DATABASE_URL from environment
+  // Connection failures will be handled gracefully in tests
+}
+
 const sql = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql);
 

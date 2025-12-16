@@ -34,6 +34,12 @@ if (!envResult.success) {
   envResult.error.issues.forEach(issue => {
     console.error(`  - ${issue.path.join('.')}: ${issue.message}`);
   });
+  
+  // Don't exit in test environment - throw error instead
+  if (process.env.NODE_ENV === 'test') {
+    throw new Error('Invalid environment variables for tests');
+  }
+  
   process.exit(1);
 }
 
