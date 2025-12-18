@@ -1,95 +1,96 @@
-import { Request, Response, NextFunction } from 'express';
-import { AppError } from '#utils/AppError';
-import { ZodError } from 'zod';
 import logger from '#config/logger';
 import { HTTP_STATUS } from '#constants/httpStatus';
+import { AppError } from '#utils/AppError';
+import { Request, Response } from 'express';
+import { ZodError } from 'zod';
 
 export const globalErrorHandler = (
-  err: Error | AppError | ZodError,
+  err: AppError | Error | ZodError,
   req: Request,
-  res: Response,
-  _next: NextFunction
+  res: Response
 ) => {
-  const requestId = req.id || 'unknown';
+  const requestId = req.id ?? 'unknown';
 
   // Handle Zod validation errors
   if (err instanceof ZodError) {
     logger.warn('Validation error', {
-      requestId,
-      path: req.path,
-      method: req.method,
       errors: err.issues,
+      method: req.method,
+      path: req.path,
+      requestId,
     });
 
     return res.status(HTTP_STATUS.BAD_REQUEST).json({
-      status: 'fail',
-      message: 'Validation failed',
       errors: err.issues,
+      message: 'Validation failed',
       requestId,
+      status: 'fail',
     });
   }
 
   // Handle operational AppErrors
   if (err instanceof AppError && err.isOperational) {
     logger.warn('Operational error', {
-      requestId,
-      path: req.path,
-      method: req.method,
-      statusCode: err.statusCode,
       message: err.message,
+      method: req.method,
+      path: req.path,
+      requestId,
+      statusCode: err.statusCode,
     });
 
     return res.status(err.statusCode).json({
-      status: err.status,
       message: err.message,
       requestId,
+      status: err.status,
     });
   }
 
   // Handle JWT errors
   if (err.name === 'JsonWebTokenError') {
     logger.warn('JWT error', {
-      requestId,
-      path: req.path,
-      method: req.method,
       error: err.message,
+      method: req.method,
+      path: req.path,
+      requestId,
     });
 
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-      status: 'fail',
       message: 'Invalid token',
       requestId,
+      status: 'fail',
     });
   }
 
   if (err.name === 'TokenExpiredError') {
     logger.warn('Token expired', {
-      requestId,
-      path: req.path,
       method: req.method,
+      path: req.path,
+      requestId,
     });
 
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-      status: 'fail',
       message: 'Token expired',
       requestId,
+      status: 'fail',
     });
   }
 
   // Handle unknown/programming errors
   logger.error('Unexpected error', {
-    requestId,
-    path: req.path,
-    method: req.method,
     error: err.message,
+    method: req.method,
+    path: req.path,
+    requestId,
     stack: err.stack,
   });
 
   return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-    status: 'error',
     message:
-      process.env.NODE_ENV === 'production' ? 'Something went wrong!' : err.message,
+      process.env.NODE_ENV === 'production'
+        ? 'Something went wrong!'
+        : err.message,
     requestId,
+    status: 'error',
     ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
   });
 };

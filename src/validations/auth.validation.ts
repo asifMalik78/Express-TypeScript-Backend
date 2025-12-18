@@ -16,24 +16,27 @@ const passwordSchema = z
 
 /**
  * Email validation schema
+ * Using refine for email validation as .email() is deprecated in Zod v4
  */
 const emailSchema = z
   .string()
   .trim()
   .toLowerCase()
   .max(255, 'Email must be less than 255 characters')
-  .email('Invalid email address');
+  .refine(val => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), {
+    message: 'Invalid email address',
+  });
 
 /**
  * Signup validation schema
  */
 export const signupSchema = z.object({
+  email: emailSchema,
   name: z
     .string()
     .min(2, 'Name must be at least 2 characters')
     .max(255, 'Name must be less than 255 characters')
     .trim(),
-  email: emailSchema,
   password: passwordSchema,
   role: z.enum(['user', 'admin']).default('user').optional(),
 });

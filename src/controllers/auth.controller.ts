@@ -1,104 +1,107 @@
-import { Request, Response, NextFunction } from 'express';
+import logger from '#config/logger';
+import { HTTP_STATUS } from '#constants/httpStatus';
+import { COOKIE_NAMES } from '#constants/tokens';
 import {
-  register,
   login as loginService,
-  refresh,
   logout as logoutService,
+  refresh,
+  register,
 } from '#services/auth.service';
 import { catchAsync } from '#utils/catchAsync';
-import { HTTP_STATUS } from '#constants/httpStatus';
 import Cookies from '#utils/cookies';
-import { COOKIE_NAMES } from '#constants/tokens';
-import logger from '#config/logger';
+import { Request, Response } from 'express';
 
 /**
  * Sign up a new user
  */
-export const signup = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction) => {
-    const { name, email, password } = req.body;
-    const result = await register({ name, email, password });
+export const signup = catchAsync(async (req: Request, res: Response) => {
+  const { email, name, password } = req.body as {
+    email: string;
+    name: string;
+    password: string;
+  };
+  const result = await register({ email, name, password });
 
-    // Set cookies
-    Cookies.set(res, COOKIE_NAMES.ACCESS_TOKEN, result.access_token);
-    Cookies.set(res, COOKIE_NAMES.REFRESH_TOKEN, result.refresh_token);
+  // Set cookies
+  Cookies.set(res, COOKIE_NAMES.ACCESS_TOKEN, result.access_token);
+  Cookies.set(res, COOKIE_NAMES.REFRESH_TOKEN, result.refresh_token);
 
-    logger.info('User signed up', { userId: result.user.id, email });
+  logger.info('User signed up', { email, userId: result.user.id });
 
-    return res.status(HTTP_STATUS.CREATED).json({
-      status: 'success',
-      data: {
-        user: result.user,
-      },
-    });
-  }
-);
+  return res.status(HTTP_STATUS.CREATED).json({
+    data: {
+      user: result.user,
+    },
+    status: 'success',
+  });
+});
 
 /**
  * Login user
  */
-export const login = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction) => {
-    const { email, password } = req.body;
-    const result = await loginService({ email, password });
+export const login = catchAsync(async (req: Request, res: Response) => {
+  const { email, password } = req.body as {
+    email: string;
+    password: string;
+  };
+  const result = await loginService({ email, password });
 
-    // Set cookies
-    Cookies.set(res, COOKIE_NAMES.ACCESS_TOKEN, result.access_token);
-    Cookies.set(res, COOKIE_NAMES.REFRESH_TOKEN, result.refresh_token);
+  // Set cookies
+  Cookies.set(res, COOKIE_NAMES.ACCESS_TOKEN, result.access_token);
+  Cookies.set(res, COOKIE_NAMES.REFRESH_TOKEN, result.refresh_token);
 
-    logger.info('User logged in', { userId: result.user.id });
+  logger.info('User logged in', { userId: result.user.id });
 
-    return res.status(HTTP_STATUS.OK).json({
-      status: 'success',
-      data: {
-        user: result.user,
-        access_token: result.access_token,
-      },
-    });
-  }
-);
+  return res.status(HTTP_STATUS.OK).json({
+    data: {
+      access_token: result.access_token,
+      user: result.user,
+    },
+    status: 'success',
+  });
+});
 
 /**
  * Refresh access token
  */
-export const refreshToken = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction) => {
-    const { refreshToken: requestRefreshToken } = req.body;
-    const result = await refresh(requestRefreshToken);
+export const refreshToken = catchAsync(async (req: Request, res: Response) => {
+  const { refreshToken: requestRefreshToken } = req.body as {
+    refreshToken: string;
+  };
+  const result = await refresh(requestRefreshToken);
 
-    // Update refresh token cookie
-    Cookies.set(res, COOKIE_NAMES.REFRESH_TOKEN, result.refresh_token);
+  // Update refresh token cookie
+  Cookies.set(res, COOKIE_NAMES.REFRESH_TOKEN, result.refresh_token);
 
-    return res.status(HTTP_STATUS.OK).json({
-      status: 'success',
-      data: {
-        access_token: result.access_token,
-      },
-    });
-  }
-);
+  return res.status(HTTP_STATUS.OK).json({
+    data: {
+      access_token: result.access_token,
+    },
+    status: 'success',
+  });
+});
 
 /**
  * Logout user
  */
-export const logout = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction) => {
-    const refreshToken =
-      req.cookies[COOKIE_NAMES.REFRESH_TOKEN] || req.body.refreshToken;
+export const logout = catchAsync(async (req: Request, res: Response) => {
+  const body = req.body as undefined | { refreshToken?: string };
+  const refreshToken =
+    body?.refreshToken ??
+    (req.cookies[COOKIE_NAMES.REFRESH_TOKEN] as string | undefined);
 
-    if (refreshToken) {
-      await logoutService(refreshToken);
-    }
-
-    // Clear cookies
-    Cookies.remove(res, COOKIE_NAMES.ACCESS_TOKEN);
-    Cookies.remove(res, COOKIE_NAMES.REFRESH_TOKEN);
-
-    logger.info('User logged out', { userId: req.user?.id });
-
-    return res.status(HTTP_STATUS.OK).json({
-      status: 'success',
-      message: 'Logged out successfully',
-    });
+  if (refreshToken) {
+    await logoutService(refreshToken);
   }
-);
+
+  // Clear cookies
+  Cookies.remove(res, COOKIE_NAMES.ACCESS_TOKEN);
+  Cookies.remove(res, COOKIE_NAMES.REFRESH_TOKEN);
+
+  logger.info('User logged out', { userId: req.user?.id });
+
+  return res.status(HTTP_STATUS.OK).json({
+    message: 'Logged out successfully',
+    status: 'success',
+  });
+});

@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
+import { NextFunction, Request, Response } from 'express';
 
 /**
  * Middleware to add a unique request ID to each request
@@ -17,10 +17,8 @@ export const requestId = (
 };
 
 // Extend Express Request interface
-declare global {
-  namespace Express {
-    interface Request {
-      id?: string;
-    }
+declare module 'express-serve-static-core' {
+  interface Request {
+    id?: string;
   }
 }

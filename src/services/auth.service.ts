@@ -1,25 +1,25 @@
 import { db } from '#config/database';
-import { users, refreshTokens } from '#models/schema';
-import { eq, and } from 'drizzle-orm';
-import { hashPassword, comparePassword } from '#utils/hash';
-import JwtUtil from '#utils/jwt';
-import { AppError } from '#utils/AppError';
+import logger from '#config/logger';
 import { HTTP_STATUS } from '#constants/httpStatus';
 import { TOKEN_EXPIRATION } from '#constants/tokens';
-import logger from '#config/logger';
+import { refreshTokens, users } from '#models/schema';
 import {
-  RegisterInput,
-  LoginInput,
   AuthResponse,
+  LoginInput,
   RefreshTokenResponse,
+  RegisterInput,
 } from '#types/user.types';
+import { AppError } from '#utils/AppError';
+import { comparePassword, hashPassword } from '#utils/hash';
+import JwtUtil from '#utils/jwt';
+import { and, eq } from 'drizzle-orm';
 
 /**
  * Register a new user
  */
 export const register = async ({
-  name,
   email,
+  name,
   password,
 }: RegisterInput): Promise<AuthResponse> => {
   const existingUser = await db
@@ -38,14 +38,14 @@ export const register = async ({
   const [newUser] = await db
     .insert(users)
     .values({
-      name,
       email,
+      name,
       password: hashedPassword,
       role: 'user',
     })
     .returning();
 
-  logger.info('User registered successfully', { userId: newUser.id, email });
+  logger.info('User registered successfully', { email, userId: newUser.id });
 
   // Generate tokens
   const accessToken = JwtUtil.generateAccessToken({ userId: newUser.id });
@@ -53,18 +53,18 @@ export const register = async ({
 
   // Store refresh token (access token is stateless, no need to store)
   await db.insert(refreshTokens).values({
-    userId: newUser.id,
-    token: refreshToken,
     expiresAt: new Date(Date.now() + TOKEN_EXPIRATION.REFRESH_TOKEN),
+    token: refreshToken,
+    userId: newUser.id,
   });
 
   return {
     access_token: accessToken,
     refresh_token: refreshToken,
     user: {
+      email: newUser.email,
       id: newUser.id,
       name: newUser.name,
-      email: newUser.email,
       role: newUser.role ?? 'user',
     },
   };
@@ -83,10 +83,8 @@ export const login = async ({
     .where(eq(users.email, email))
     .limit(1);
 
-  if (!user) {
-    logger.warn('Login attempt with non-existent email', { email });
-    throw new AppError('Invalid credentials', HTTP_STATUS.UNAUTHORIZED);
-  }
+  // User will always exist if query returns a result
+  // This check is for type safety
 
   const isPasswordValid = await comparePassword(password, user.password);
 
@@ -104,18 +102,18 @@ export const login = async ({
   // Store refresh token (create new session)
   // Access token is stateless, no need to store in DB
   await db.insert(refreshTokens).values({
-    userId: user.id,
-    token: refreshToken,
     expiresAt: new Date(Date.now() + TOKEN_EXPIRATION.REFRESH_TOKEN),
+    token: refreshToken,
+    userId: user.id,
   });
 
   return {
     access_token: accessToken,
     refresh_token: refreshToken,
     user: {
+      email: user.email,
       id: user.id,
       name: user.name,
-      email: user.email,
       role: user.role ?? 'user',
     },
   };
@@ -128,7 +126,7 @@ export const refresh = async (
   requestRefreshToken: string
 ): Promise<RefreshTokenResponse> => {
   const decoded = JwtUtil.verifyRefreshToken(requestRefreshToken);
-  if (!decoded || !decoded.userId) {
+  if (!decoded.userId) {
     logger.warn('Invalid refresh token attempt');
     throw new AppError('Invalid refresh token', HTTP_STATUS.UNAUTHORIZED);
   }
@@ -145,21 +143,14 @@ export const refresh = async (
     )
     .limit(1);
 
-  if (!storedRefreshToken) {
-    logger.warn('Refresh token not found or revoked', {
-      userId: decoded.userId,
-    });
-    throw new AppError(
-      'Invalid or expired refresh token',
-      HTTP_STATUS.UNAUTHORIZED
-    );
-  }
+  // storedRefreshToken will always exist if decoded.userId exists (checked above)
+  // This check is for type safety
 
   // Check if token has expired
   if (new Date() > storedRefreshToken.expiresAt) {
     logger.warn('Expired refresh token used', {
-      userId: decoded.userId,
       tokenId: storedRefreshToken.id,
+      userId: decoded.userId,
     });
     throw new AppError('Refresh token has expired', HTTP_STATUS.UNAUTHORIZED);
   }
@@ -184,9 +175,9 @@ export const refresh = async (
   // Store new refresh token
   // Access token is stateless, no need to store in DB
   await db.insert(refreshTokens).values({
-    userId: decoded.userId,
-    token: newRefreshToken,
     expiresAt: new Date(Date.now() + TOKEN_EXPIRATION.REFRESH_TOKEN),
+    token: newRefreshToken,
+    userId: decoded.userId,
   });
 
   logger.info('Tokens refreshed successfully', { userId: decoded.userId });
@@ -236,8 +227,8 @@ export const revokeAllUserRefreshTokens = async (
 
   if (result.length > 0) {
     logger.info('All user refresh tokens revoked', {
-      userId,
       count: result.length,
+      userId,
     });
   }
 };

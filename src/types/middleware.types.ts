@@ -2,17 +2,7 @@
  * Middleware-related types and interfaces
  */
 
-import { ZodTypeAny } from 'zod';
-
-/**
- * Rate limiting configuration options
- */
-export interface RateLimitOptions {
-  windowMs: number; // Time window in milliseconds
-  maxRequests: number; // Maximum number of requests per window
-  message?: string;
-  skipSuccessfulRequests?: boolean;
-}
+import { z } from 'zod';
 
 /**
  * Rate limit store entry
@@ -23,17 +13,25 @@ export interface RateLimitEntry {
 }
 
 /**
+ * Rate limiting configuration options
+ */
+export interface RateLimitOptions {
+  maxRequests: number; // Maximum number of requests per window
+  message?: string;
+  skipSuccessfulRequests?: boolean;
+  windowMs: number; // Time window in milliseconds
+}
+
+/**
  * Rate limit store structure
  */
-export interface RateLimitStore {
-  [key: string]: RateLimitEntry;
-}
+export type RateLimitStore = Record<string, RateLimitEntry>;
 
 /**
  * Validation schemas for request validation middleware
  */
 export interface ValidationSchemas {
-  body?: ZodTypeAny;
-  query?: ZodTypeAny;
-  params?: ZodTypeAny;
+  body?: z.ZodType;
+  params?: z.ZodType;
+  query?: z.ZodType;
 }

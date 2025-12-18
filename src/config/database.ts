@@ -1,8 +1,8 @@
 import 'dotenv/config';
-import { drizzle } from 'drizzle-orm/neon-http';
 import { neon, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
 
-const nodeEnv = process.env.NODE_ENV || 'development';
+const nodeEnv = process.env.NODE_ENV ?? 'development';
 
 if (nodeEnv === 'development') {
   neonConfig.fetchEndpoint = 'http://neon-local:5432/sql';
@@ -16,7 +16,10 @@ if (nodeEnv === 'test') {
   // Connection failures will be handled gracefully in tests
 }
 
-const sql = neon(process.env.DATABASE_URL!);
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is required');
+}
+const sql = neon(process.env.DATABASE_URL);
 const db = drizzle(sql);
 
-export { sql, db };
+export { db, sql };

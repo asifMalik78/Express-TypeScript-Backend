@@ -1,36 +1,34 @@
 import { Request, Response } from 'express';
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 class Cookies {
+  static get(req: Request, name: string): string | undefined {
+    return req.cookies[name] as string | undefined;
+  }
   static getOptions() {
     return {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
     };
   }
-  static set(res: Response, name: string, value: string, options: any = {}) {
-    try {
-      res.cookie(name, value, { ...this.getOptions(), ...options });
-    } catch (error) {
-      throw error;
-    }
+
+  static remove(
+    res: Response,
+    name: string,
+    options?: Partial<ReturnType<typeof Cookies.getOptions>>
+  ): void {
+    res.clearCookie(name, { ...this.getOptions(), ...options });
   }
 
-  static remove(res: Response, name: string, options: any = {}) {
-    try {
-      res.clearCookie(name, { ...this.getOptions(), ...options });
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  static get(req: Request, name: string) {
-    try {
-      return req.cookies[name];
-    } catch (error) {
-      throw error;
-    }
+  static set(
+    res: Response,
+    name: string,
+    value: string,
+    options?: Partial<ReturnType<typeof Cookies.getOptions>>
+  ): void {
+    res.cookie(name, value, { ...this.getOptions(), ...options });
   }
 }
 

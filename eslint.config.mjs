@@ -1,12 +1,17 @@
 import eslint from '@eslint/js';
 import tslint from 'typescript-eslint';
-import perfectionist from 'eslint-';
-import eslintPluginPrettier from 'eslint-plugin-prettier/recommended';
-
+import prettier from 'eslint-plugin-prettier/recommended';
+import perfectionist from 'eslint-plugin-perfectionist';
 
 export default tslint.config(
   {
-    ignores: ["**/*.js" , "node_modules" , "dist"]
+    ignores: [
+      '**/*.js',
+      'node_modules',
+      'dist',
+      'drizzle.config.ts',
+      'eslint.config.mjs',
+    ],
   },
   eslint.configs.recommended,
   tslint.configs.strictTypeChecked,
@@ -15,10 +20,10 @@ export default tslint.config(
     languageOptions: {
       parserOptions: {
         projectService: true,
-        tsconfigRootDir: import.meta.dirname
-      }
-    }
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
   },
-  perfectionist.configs["recommended-natural"],
-  eslintPluginPrettier.configs["recommended"]
-)
+  perfectionist.configs['recommended-natural'],
+  prettier
+);

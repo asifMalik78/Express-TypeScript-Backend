@@ -1,13 +1,13 @@
 import winston from 'winston';
 
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  defaultMeta: { service: 'backend' },
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.errors({ stack: true }),
     winston.format.json()
   ),
-  defaultMeta: { service: 'backend' },
+  level: process.env.LOG_LEVEL ?? 'info',
   transports: [
     new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
   ],

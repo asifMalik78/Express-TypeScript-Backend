@@ -1,25 +1,37 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import cookieParser from 'cookie-parser';
-import morgan from 'morgan';
+import logger from '#config/logger.js';
+import { HTTP_STATUS } from '#constants/httpStatus.js';
+import { requestId } from '#middleware/requestId.middleware.js';
 import compression from 'compression';
-import logger from '#config/logger';
-import { HTTP_STATUS } from '#constants/httpStatus';
-import { requestId } from '#middleware/requestId.middleware';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import express from 'express';
+import helmet from 'helmet';
+import morgan from 'morgan';
 
 const app = express();
 
 // Security middleware
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 
 // CORS configuration
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+    origin: process.env.CORS_ORIGIN ?? '*',
   })
 );
 
@@ -43,17 +55,17 @@ app.use(
   })
 );
 
+import { globalErrorHandler } from '#middleware/error.middleware';
 import authRoutes from '#routes/auth.routes';
 import userRoutes from '#routes/user.routes';
-import { globalErrorHandler } from '#middleware/error.middleware';
 import { AppError } from '#utils/AppError';
 
 app.use('/health', (req, res) => {
   res.status(HTTP_STATUS.OK).json({
+    message: 'Server is healthy',
     status: HTTP_STATUS.OK,
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    message: 'Server is healthy',
   });
 });
 

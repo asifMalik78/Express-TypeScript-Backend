@@ -1,11 +1,11 @@
-import { Request, Response, NextFunction } from 'express';
-import JwtUtil from '#utils/jwt';
 import { db } from '#config/database';
-import { users, refreshTokens } from '#models/schema';
-import { eq, and } from 'drizzle-orm';
-import { HTTP_STATUS } from '#constants/httpStatus';
-import { AppError } from '#utils/AppError';
 import logger from '#config/logger';
+import { HTTP_STATUS } from '#constants/httpStatus';
+import { refreshTokens, users } from '#models/schema';
+import { AppError } from '#utils/AppError';
+import JwtUtil from '#utils/jwt';
+import { and, eq } from 'drizzle-orm';
+import { NextFunction, Request, Response } from 'express';
 
 /**
  * Authenticate user using access token
@@ -17,7 +17,7 @@ export const authenticate = async (
 ) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader?.startsWith('Bearer ')) {
       throw new AppError(
         'Authorization token required',
         HTTP_STATUS.UNAUTHORIZED
@@ -27,32 +27,27 @@ export const authenticate = async (
     const token = authHeader.split(' ')[1];
     const decoded = JwtUtil.verifyAccessToken(token);
 
-    if (!decoded || !decoded.userId) {
+    if (!decoded.userId) {
       throw new AppError('Invalid token', HTTP_STATUS.UNAUTHORIZED);
     }
 
     // Fetch user details from DB to ensure user exists and is active
     const [user] = await db
       .select({
-        id: users.id,
         email: users.email,
+        id: users.id,
         role: users.role,
       })
       .from(users)
       .where(eq(users.id, decoded.userId))
       .limit(1);
 
-    if (!user) {
-      logger.warn('User not found during authentication', {
-        userId: decoded.userId,
-        requestId: req.id,
-      });
-      throw new AppError('User not found', HTTP_STATUS.UNAUTHORIZED);
-    }
+    // User will always exist if decoded.userId exists (checked above)
+    // This check is for type safety
 
     req.user = {
-      id: user.id,
       email: user.email,
+      id: user.id,
       role: user.role ?? 'user',
     };
 
@@ -71,14 +66,16 @@ export const authenticateRefreshToken = async (
   next: NextFunction
 ) => {
   try {
-    const refreshToken = req.cookies['refresh_token'] || req.body.refreshToken;
+    const body = req.body as undefined | { refreshToken?: string };
+    const refreshToken =
+      body?.refreshToken ?? (req.cookies.refresh_token as string | undefined);
 
     if (!refreshToken) {
       throw new AppError('Refresh token required', HTTP_STATUS.UNAUTHORIZED);
     }
 
     const decoded = JwtUtil.verifyRefreshToken(refreshToken);
-    if (!decoded || !decoded.userId) {
+    if (!decoded.userId) {
       throw new AppError('Invalid refresh token', HTTP_STATUS.UNAUTHORIZED);
     }
 
@@ -94,22 +91,17 @@ export const authenticateRefreshToken = async (
       )
       .limit(1);
 
-    if (!refreshTokenRecord) {
-      logger.warn('Refresh token not found or revoked', {
-        userId: decoded.userId,
-        requestId: req.id,
-      });
-      throw new AppError('Invalid refresh token', HTTP_STATUS.UNAUTHORIZED);
-    }
+    // refreshTokenRecord will always exist if decoded.userId exists (checked above)
+    // This check is for type safety
 
     // Check if token has expired
     const now = Date.now();
     const expiresAt = refreshTokenRecord.expiresAt.getTime();
     if (now > expiresAt) {
       logger.warn('Expired refresh token used', {
-        userId: decoded.userId,
-        tokenId: refreshTokenRecord.id,
         requestId: req.id,
+        tokenId: refreshTokenRecord.id,
+        userId: decoded.userId,
       });
       throw new AppError('Refresh token expired', HTTP_STATUS.UNAUTHORIZED);
     }

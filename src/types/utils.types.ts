@@ -6,8 +6,8 @@
  * Pagination options
  */
 export interface PaginationOptions {
-  page?: number;
   limit?: number;
+  page?: number;
 }
 
 /**
@@ -16,11 +16,11 @@ export interface PaginationOptions {
 export interface PaginationResult<T> {
   data: T[];
   pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
     hasNext: boolean;
     hasPrev: boolean;
+    limit: number;
+    page: number;
+    total: number;
+    totalPages: number;
   };
 }

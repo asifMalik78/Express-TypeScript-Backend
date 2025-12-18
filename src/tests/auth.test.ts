@@ -1,8 +1,7 @@
-import request from 'supertest';
-import app from '#src/app';
 import { db } from '#config/database';
-import { users, refreshTokens } from '#models/schema';
-import { eq } from 'drizzle-orm';
+import { refreshTokens, users } from '#models/schema';
+import app from '#src/app';
+import request from 'supertest';
 
 // Check if database is available before running tests
 let isDatabaseAvailable = false;
@@ -12,10 +11,16 @@ beforeAll(async () => {
     // Try a simple query to check database connection
     await db.select().from(users).limit(1);
     isDatabaseAvailable = true;
-  } catch (error: any) {
-    if (error?.message?.includes('fetch failed') || error?.message?.includes('connect')) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    if (
+      err.message?.includes('fetch failed') ||
+      err.message?.includes('connect')
+    ) {
       console.warn('⚠️  Database not available. Tests will be skipped.');
-      console.warn('   To run tests, ensure DATABASE_URL is set and database is accessible.');
+      console.warn(
+        '   To run tests, ensure DATABASE_URL is set and database is accessible.'
+      );
       isDatabaseAvailable = false;
     } else {
       throw error;
@@ -25,8 +30,8 @@ beforeAll(async () => {
 
 describe('Auth API', () => {
   const testUser = {
-    name: 'Test User',
     email: 'test@example.com',
+    name: 'Test User',
     password: 'Test1234',
   };
 
@@ -46,7 +51,7 @@ describe('Auth API', () => {
 
   describe('POST /api/v1/auth/signup', () => {
     const test = isDatabaseAvailable ? it : it.skip;
-    
+
     test('should register a new user', async () => {
       const response = await request(app)
         .post('/api/v1/auth/signup')
@@ -54,8 +59,10 @@ describe('Auth API', () => {
         .expect(201);
 
       expect(response.body).toHaveProperty('status', 'success');
-      expect(response.body.data).toHaveProperty('user');
-      expect(response.body.data.user).toHaveProperty('email', testUser.email);
+      const body = response.body as { data: { user: { email: string } } };
+      const bodyData = body.data;
+      expect(bodyData).toHaveProperty('user');
+      expect(bodyData.user).toHaveProperty('email', testUser.email);
       expect(response.headers['set-cookie']).toBeDefined();
     });
 
@@ -100,7 +107,7 @@ describe('Auth API', () => {
 
   describe('POST /api/v1/auth/login', () => {
     const test = isDatabaseAvailable ? it : it.skip;
-    
+
     beforeEach(async () => {
       if (!isDatabaseAvailable) return;
       // Create a user for login tests
@@ -117,8 +124,12 @@ describe('Auth API', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('status', 'success');
-      expect(response.body.data).toHaveProperty('user');
-      expect(response.body.data).toHaveProperty('access_token');
+      const body = response.body as {
+        data: { access_token?: string; user: unknown };
+      };
+      const bodyData = body.data;
+      expect(bodyData).toHaveProperty('access_token');
+      expect(bodyData).toHaveProperty('user');
     });
 
     test('should return 401 for invalid email', async () => {
@@ -158,11 +169,17 @@ describe('Auth API', () => {
         email: testUser.email,
         password: testUser.password,
       });
+      const loginBody = loginResponse.body as {
+        data: { refresh_token?: string };
+      };
+      const loginData = loginBody.data;
+      const cookies = loginResponse.headers['set-cookie'] as unknown as
+        | string[]
+        | undefined;
       refreshToken =
-        loginResponse.body.data.refresh_token ||
-        loginResponse.headers['set-cookie']?.[0]
-          ?.split('refresh_token=')[1]
-          ?.split(';')[0];
+        loginData.refresh_token ??
+        cookies?.[0]?.split('refresh_token=')[1]?.split(';')[0] ??
+        '';
     });
 
     test('should refresh access token', async () => {
@@ -172,8 +189,9 @@ describe('Auth API', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('status', 'success');
-      expect(response.body.data).toHaveProperty('access_token');
+      const body = response.body as { data: { access_token?: string } };
+      const bodyData = body.data;
+      expect(bodyData).toHaveProperty('access_token');
     });
   });
 });
-

@@ -3,18 +3,18 @@
  */
 
 /**
- * JWT token payload structure
- */
-export interface JwtTokenPayload {
-  userId: number;
-  iat?: number;
-  exp?: number;
-}
-
-/**
  * Access token payload
  */
 export interface AccessTokenPayload {
+  userId: number;
+}
+
+/**
+ * JWT token payload structure
+ */
+export interface JwtTokenPayload {
+  exp?: number;
+  iat?: number;
   userId: number;
 }
 
@@ -23,6 +23,14 @@ export interface AccessTokenPayload {
  */
 export interface RefreshTokenPayload {
   userId: number;
+}
+
+/**
+ * Token expiration configuration
+ */
+export interface TokenExpirationConfig {
+  accessToken: number | string;
+  refreshToken: number | string;
 }
 
 /**
@@ -37,15 +45,7 @@ export interface TokenPair {
  * Token verification result
  */
 export interface TokenVerificationResult {
-  valid: boolean;
-  payload?: JwtTokenPayload;
   error?: string;
-}
-
-/**
- * Token expiration configuration
- */
-export interface TokenExpirationConfig {
-  accessToken: string | number;
-  refreshToken: string | number;
+  payload?: JwtTokenPayload;
+  valid: boolean;
 }

@@ -1,10 +1,12 @@
-import app from '#src/app';
 import logger from '#config/logger';
+import app from '#src/app';
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 
 const server = app.listen(PORT, () => {
-  logger.info(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+  logger.info(
+    `🚀 Server running on port ${String(PORT)} in ${process.env.NODE_ENV ?? 'development'} mode`
+  );
 });
 
 // Graceful shutdown
@@ -23,8 +25,12 @@ const gracefulShutdown = (signal: string) => {
   }, 10000);
 };
 
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => {
+  gracefulShutdown('SIGTERM');
+});
+process.on('SIGINT', () => {
+  gracefulShutdown('SIGINT');
+});
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err: Error) => {

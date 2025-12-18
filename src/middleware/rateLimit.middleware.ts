@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
-import { HTTP_STATUS } from '#constants/httpStatus';
-import { AppError } from '#utils/AppError';
 import logger from '#config/logger';
+import { HTTP_STATUS } from '#constants/httpStatus';
 import { RateLimitOptions, RateLimitStore } from '#types/middleware.types';
+import { AppError } from '#utils/AppError';
+import { NextFunction, Request, Response } from 'express';
 
 const store: RateLimitStore = {};
 
@@ -11,25 +11,28 @@ const store: RateLimitStore = {};
  */
 export const rateLimit = (options: RateLimitOptions) => {
   const {
-    windowMs,
     maxRequests,
     message = 'Too many requests, please try again later',
     skipSuccessfulRequests = false,
+    windowMs,
   } = options;
 
   return (req: Request, res: Response, next: NextFunction) => {
-    const key = req.ip || req.socket.remoteAddress || 'unknown';
+    const key = req.ip ?? req.socket.remoteAddress ?? 'unknown';
     const now = Date.now();
 
     // Clean up expired entries
     Object.keys(store).forEach(k => {
-      if (store[k].resetTime < now) {
+      const entry = store[k];
+      if (entry.resetTime < now) {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete store[k];
       }
     });
 
     // Get or create rate limit entry
     let entry = store[key];
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!entry || entry.resetTime < now) {
       entry = {
         count: 0,
@@ -52,13 +55,14 @@ export const rateLimit = (options: RateLimitOptions) => {
     // Check if limit exceeded
     if (entry.count > maxRequests) {
       logger.warn('Rate limit exceeded', {
+        count: entry.count,
         ip: key,
         path: req.path,
-        count: entry.count,
         requestId: req.id,
       });
 
-      return next(new AppError(message, HTTP_STATUS.TOO_MANY_REQUESTS));
+      next(new AppError(message, HTTP_STATUS.TOO_MANY_REQUESTS));
+      return;
     }
 
     // Track successful requests if needed

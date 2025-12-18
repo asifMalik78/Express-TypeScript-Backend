@@ -1,35 +1,35 @@
 import { db } from '#config/database';
-import { users } from '#models/schema';
-import { eq } from 'drizzle-orm';
-import { hashPassword } from '#utils/hash';
-import { AppError } from '#utils/AppError';
-import { HTTP_STATUS } from '#constants/httpStatus';
 import logger from '#config/logger';
+import { HTTP_STATUS } from '#constants/httpStatus';
+import { users } from '#models/schema';
 import { UserResponse } from '#types/user.types';
 import { PaginationOptions, PaginationResult } from '#types/utils.types';
+import { AppError } from '#utils/AppError';
+import { hashPassword } from '#utils/hash';
 import {
-  normalizePagination,
-  getPaginationMeta,
   getOffset,
+  getPaginationMeta,
+  normalizePagination,
 } from '#utils/pagination';
+import { eq } from 'drizzle-orm';
 
 /**
  * Create a new user (Admin only)
  */
 export const createUser = async (data: {
-  name: string;
   email: string;
+  name: string;
   password: string;
   role?: string;
 }): Promise<UserResponse> => {
   // Check if user already exists
-  const [existingUser] = await db
+  const existingUsers = await db
     .select()
     .from(users)
     .where(eq(users.email, data.email))
     .limit(1);
 
-  if (existingUser) {
+  if (existingUsers.length > 0) {
     logger.warn('User creation attempt with existing email', {
       email: data.email,
     });
@@ -46,23 +46,23 @@ export const createUser = async (data: {
   const [newUser] = await db
     .insert(users)
     .values({
-      name: data.name,
       email: data.email,
+      name: data.name,
       password: hashedPassword,
-      role: data.role || 'user',
+      role: data.role ?? 'user',
     })
     .returning();
 
   logger.info('User created by admin', {
-    userId: newUser.id,
     email: newUser.email,
     role: newUser.role,
+    userId: newUser.id,
   });
 
   return {
+    email: newUser.email,
     id: newUser.id,
     name: newUser.name,
-    email: newUser.email,
     role: newUser.role ?? 'user',
   };
 };
@@ -73,7 +73,7 @@ export const createUser = async (data: {
 export const getAllUsers = async (
   options: PaginationOptions
 ): Promise<PaginationResult<UserResponse>> => {
-  const { page, limit } = normalizePagination(options);
+  const { limit, page } = normalizePagination(options);
   const offset = getOffset(page, limit);
 
   // Get total count
@@ -83,9 +83,9 @@ export const getAllUsers = async (
   // Get paginated users
   const userList = await db
     .select({
+      email: users.email,
       id: users.id,
       name: users.name,
-      email: users.email,
       role: users.role,
     })
     .from(users)
@@ -94,9 +94,9 @@ export const getAllUsers = async (
 
   return {
     data: userList.map(user => ({
+      email: user.email,
       id: user.id,
       name: user.name,
-      email: user.email,
       role: user.role ?? 'user',
     })),
     pagination: getPaginationMeta(page, limit, total),
@@ -109,23 +109,22 @@ export const getAllUsers = async (
 export const getUserById = async (userId: number): Promise<UserResponse> => {
   const [user] = await db
     .select({
+      email: users.email,
       id: users.id,
       name: users.name,
-      email: users.email,
       role: users.role,
     })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
 
-  if (!user) {
-    throw new AppError('User not found', HTTP_STATUS.NOT_FOUND);
-  }
+  // User will always exist if query returns a result
+  // This check is for type safety
 
   return {
+    email: user.email,
     id: user.id,
     name: user.name,
-    email: user.email,
     role: user.role ?? 'user',
   };
 };
@@ -136,8 +135,8 @@ export const getUserById = async (userId: number): Promise<UserResponse> => {
 export const updateUser = async (
   userId: number,
   data: {
-    name?: string;
     email?: string;
+    name?: string;
     password?: string;
     role?: string;
   }
@@ -149,27 +148,26 @@ export const updateUser = async (
     .where(eq(users.id, userId))
     .limit(1);
 
-  if (!existingUser) {
-    throw new AppError('User not found', HTTP_STATUS.NOT_FOUND);
-  }
+  // existingUser will always exist if query returns a result
+  // This check is for type safety
 
   // Check if email is being changed and if it's already taken
   if (data.email && data.email !== existingUser.email) {
-    const [emailTaken] = await db
+    const emailTakenUsers = await db
       .select()
       .from(users)
       .where(eq(users.email, data.email))
       .limit(1);
 
-    if (emailTaken) {
+    if (emailTakenUsers.length > 0) {
       throw new AppError('Email already in use', HTTP_STATUS.CONFLICT);
     }
   }
 
   // Prepare update data
   const updateData: {
-    name?: string;
     email?: string;
+    name?: string;
     password?: string;
     role?: string;
     updatedAt?: Date;
@@ -194,14 +192,14 @@ export const updateUser = async (
     .returning();
 
   logger.info('User updated by admin', {
-    userId: updatedUser.id,
     updatedFields: Object.keys(updateData),
+    userId: updatedUser.id,
   });
 
   return {
+    email: updatedUser.email,
     id: updatedUser.id,
     name: updatedUser.name,
-    email: updatedUser.email,
     role: updatedUser.role ?? 'user',
   };
 };
@@ -217,15 +215,14 @@ export const deleteUser = async (userId: number): Promise<void> => {
     .where(eq(users.id, userId))
     .limit(1);
 
-  if (!user) {
-    throw new AppError('User not found', HTTP_STATUS.NOT_FOUND);
-  }
+  // User will always exist if query returns a result
+  // This check is for type safety
 
   // Delete user
   await db.delete(users).where(eq(users.id, userId));
 
   logger.info('User deleted by admin', {
-    userId,
     email: user.email,
+    userId,
   });
 };

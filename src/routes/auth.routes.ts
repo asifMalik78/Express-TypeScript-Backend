@@ -1,29 +1,29 @@
-import { Router } from 'express';
 import {
   login,
+  logout,
   refreshToken,
   signup,
-  logout,
 } from '#controllers/auth.controller';
 import {
   authenticate,
   authenticateRefreshToken,
 } from '#middleware/auth.middleware';
-import { validate } from '#middleware/validation.middleware';
 import { rateLimit } from '#middleware/rateLimit.middleware';
+import { validate } from '#middleware/validation.middleware';
 import {
-  signupSchema,
   loginSchema,
   refreshSchema,
+  signupSchema,
 } from '#validations/auth.validation';
+import { Router } from 'express';
 
 const router = Router();
 
 // Rate limiting for auth routes
 const authRateLimit = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
   maxRequests: 5, // 5 requests per window
   message: 'Too many authentication attempts, please try again later',
+  windowMs: 15 * 60 * 1000, // 15 minutes
 });
 
 /**

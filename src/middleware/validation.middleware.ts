@@ -1,40 +1,42 @@
-import { Request, Response, NextFunction } from 'express';
 import { HTTP_STATUS } from '#constants/httpStatus';
-import { z, ZodTypeAny } from 'zod';
 import { ValidationSchemas } from '#types/middleware.types';
+import { NextFunction, Request, Response } from 'express';
+import { z } from 'zod';
 
 /**
  * Validation middleware factory
  * Supports validating body, query, and params
  */
-export const validate = (schemas: ValidationSchemas | ZodTypeAny) => {
+export const validate = (schemas: ValidationSchemas | z.ZodType) => {
   return (req: Request, res: Response, next: NextFunction) => {
     // If a single schema is provided, assume it's for body (backward compatibility)
+    // Check if it's a ValidationSchemas object or a single ZodType
     if (
-      schemas &&
+      'safeParse' in schemas &&
       !('body' in schemas) &&
       !('query' in schemas) &&
       !('params' in schemas)
     ) {
-      const bodySchema = schemas as ZodTypeAny;
+      const bodySchema = schemas;
       const result = bodySchema.safeParse(req.body);
 
       if (!result.success) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
-          status: 'fail',
-          message: 'Validation failed',
           errors: result.error.issues,
+          message: 'Validation failed',
           requestId: req.id,
+          status: 'fail',
         });
       }
 
       req.body = result.data;
-      return next();
+      next();
+      return;
     }
 
     // Multiple schemas provided
     const validationSchemas = schemas as ValidationSchemas;
-    const errors: z.ZodIssue[] = [];
+    const errors: z.core.$ZodIssue[] = [];
 
     // Validate body
     if (validationSchemas.body) {
@@ -68,10 +70,10 @@ export const validate = (schemas: ValidationSchemas | ZodTypeAny) => {
 
     if (errors.length > 0) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
-        status: 'fail',
-        message: 'Validation failed',
         errors,
+        message: 'Validation failed',
         requestId: req.id,
+        status: 'fail',
       });
     }
 

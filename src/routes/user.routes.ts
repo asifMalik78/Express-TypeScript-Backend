@@ -1,19 +1,19 @@
-import { Router } from 'express';
 import {
   create,
   getAll,
   getById,
-  update,
   remove,
+  update,
 } from '#controllers/user.controller';
-import { authenticate } from '#middleware/auth.middleware';
 import { requireAdmin } from '#middleware/admin.middleware';
+import { authenticate } from '#middleware/auth.middleware';
 import { validate } from '#middleware/validation.middleware';
 import {
   createUserSchema,
   updateUserSchema,
   userIdSchema,
 } from '#validations/user.validation';
+import { Router } from 'express';
 import { z } from 'zod';
 
 const router = Router();
@@ -38,12 +38,12 @@ router.get(
   '/',
   validate({
     query: z.object({
-      page: z
+      limit: z
         .string()
         .transform(Number)
         .pipe(z.number().int().positive())
         .optional(),
-      limit: z
+      page: z
         .string()
         .transform(Number)
         .pipe(z.number().int().positive())
@@ -67,7 +67,7 @@ router.get('/:id', validate({ params: userIdSchema }), getById);
  */
 router.patch(
   '/:id',
-  validate({ params: userIdSchema, body: updateUserSchema }),
+  validate({ body: updateUserSchema, params: userIdSchema }),
   update
 );
 
@@ -78,7 +78,7 @@ router.patch(
  */
 router.put(
   '/:id',
-  validate({ params: userIdSchema, body: updateUserSchema }),
+  validate({ body: updateUserSchema, params: userIdSchema }),
   update
 );
 

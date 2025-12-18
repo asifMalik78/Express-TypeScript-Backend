@@ -1,12 +1,14 @@
-import jwt, { SignOptions, JwtPayload } from 'jsonwebtoken';
 import logger from '#config/logger';
+import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 class JwtUtil {
-  private static readonly JWT_SECRET = process.env.JWT_SECRET!;
+  private static readonly JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '15m';
+  private static readonly JWT_REFRESH_EXPIRES_IN =
+    process.env.JWT_REFRESH_EXPIRES_IN ?? '7d';
+  private static readonly JWT_SECRET = process.env.JWT_SECRET ?? '';
   private static readonly JWT_REFRESH_SECRET =
-    process.env.JWT_REFRESH_SECRET || this.JWT_SECRET;
-  private static readonly JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '15m';
-  private static readonly JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
+    process.env.JWT_REFRESH_SECRET ?? this.JWT_SECRET;
 
   /**
    * Generate access token
@@ -42,6 +44,9 @@ class JwtUtil {
    * @throws {TokenExpiredError} if token is expired
    */
   static verifyAccessToken(token: string): JwtPayload & { userId: number } {
+    if (!this.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not configured');
+    }
     try {
       return jwt.verify(token, this.JWT_SECRET) as JwtPayload & {
         userId: number;
@@ -66,6 +71,9 @@ class JwtUtil {
    * @throws {TokenExpiredError} if token is expired
    */
   static verifyRefreshToken(token: string): JwtPayload & { userId: number } {
+    if (!this.JWT_REFRESH_SECRET) {
+      throw new Error('JWT_REFRESH_SECRET is not configured');
+    }
     try {
       return jwt.verify(token, this.JWT_REFRESH_SECRET) as JwtPayload & {
         userId: number;
