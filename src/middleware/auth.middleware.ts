@@ -1,16 +1,16 @@
-import { db } from '#config/database';
-import logger from '#config/logger';
-import { HTTP_STATUS } from '#constants/httpStatus';
-import { refreshTokens, users } from '#models/schema';
-import { AppError } from '#utils/AppError';
-import JwtUtil from '#utils/jwt';
+import { db } from '../config/database';
+import logger from '../config/logger';
+import { HTTP_STATUS } from '../constants/httpStatus';
+import { refreshTokens, users } from '../models/schema';
+import { AppError } from '../utils/AppError';
+import JwtUtil from '../utils/jwt';
 import { and, eq } from 'drizzle-orm';
-import { NextFunction, Request, Response } from 'express';
+import { NextFunction, Request, RequestHandler, Response } from 'express';
 
 /**
  * Authenticate user using access token
  */
-export const authenticate = async (
+export const authenticate: RequestHandler = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -60,7 +60,7 @@ export const authenticate = async (
 /**
  * Authenticate user using refresh token from cookies
  */
-export const authenticateRefreshToken = async (
+export const authenticateRefreshToken: RequestHandler = async (
   req: Request,
   res: Response,
   next: NextFunction

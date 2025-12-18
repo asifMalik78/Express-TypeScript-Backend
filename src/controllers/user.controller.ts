@@ -1,13 +1,13 @@
-import logger from '#config/logger';
-import { HTTP_STATUS } from '#constants/httpStatus';
+import logger from '../config/logger';
+import { HTTP_STATUS } from '../constants/httpStatus';
 import {
   createUser,
   deleteUser,
   getAllUsers,
   getUserById,
   updateUser,
-} from '#services/user.service';
-import { catchAsync } from '#utils/catchAsync';
+} from '../services/user.service';
+import { catchAsync } from '../utils/catchAsync';
 import { Request, Response } from 'express';
 
 /**

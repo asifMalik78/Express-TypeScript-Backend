@@ -1,17 +1,17 @@
-import { db } from '#config/database';
-import logger from '#config/logger';
-import { HTTP_STATUS } from '#constants/httpStatus';
-import { TOKEN_EXPIRATION } from '#constants/tokens';
-import { refreshTokens, users } from '#models/schema';
+import { db } from '../config/database';
+import logger from '../config/logger';
+import { HTTP_STATUS } from '../constants/httpStatus';
+import { TOKEN_EXPIRATION } from '../constants/tokens';
+import { refreshTokens, users } from '../models/schema';
 import {
   AuthResponse,
   LoginInput,
   RefreshTokenResponse,
   RegisterInput,
-} from '#types/user.types';
-import { AppError } from '#utils/AppError';
-import { comparePassword, hashPassword } from '#utils/hash';
-import JwtUtil from '#utils/jwt';
+} from '../types/user.types';
+import { AppError } from '../utils/AppError';
+import { comparePassword, hashPassword } from '../utils/hash';
+import JwtUtil from '../utils/jwt';
 import { and, eq } from 'drizzle-orm';
 
 /**
@@ -239,6 +239,6 @@ export const revokeAllUserRefreshTokens = async (
 export const logout = async (refreshToken: string): Promise<void> => {
   await revokeRefreshToken(refreshToken);
   logger.info('User logged out', {
-    refreshToken: refreshToken.substring(0, 10) + '...',
+    refreshToken: `${refreshToken.substring(0, 10)}...`,
   });
 };

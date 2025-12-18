@@ -1,6 +1,6 @@
-import { db } from '#config/database';
-import { refreshTokens, users } from '#models/schema';
-import app from '#src/app';
+import { db } from '../config/database';
+import { refreshTokens, users } from '../models/schema';
+import app from '../app';
 import request from 'supertest';
 
 // Check if database is available before running tests

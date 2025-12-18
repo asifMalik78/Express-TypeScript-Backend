@@ -3,21 +3,8 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "baseUrl": "./src",
-    "paths": {
-      "#config/*": ["./config/*"],
-      "#constants/*": ["./constants/*"],
-      "#controllers/*": ["./controllers/*"],
-      "#middleware/*": ["./middleware/*"],
-      "#models/*": ["./models/*"],
-      "#routes/*": ["./routes/*"],
-      "#services/*": ["./services/*"],
-      "#types/*": ["./types/*"],
-      "#utils/*": ["./utils/*"],
-      "#validations/*": ["./validations/*"],
-      "#tests/*": ["./tests/*"],
-      "#src/*": ["./*"]
-    }
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts"]
 }

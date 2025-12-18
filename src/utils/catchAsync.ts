@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express';
+import { NextFunction, Request, RequestHandler, Response } from 'express';
 
 /**
  * Wraps async route handlers to catch errors and pass them to error middleware
@@ -7,7 +7,7 @@ import { NextFunction, Request, Response } from 'express';
  */
 export const catchAsync = (
   fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>
-) => {
+): RequestHandler => {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };

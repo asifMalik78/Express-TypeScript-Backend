@@ -1,6 +1,7 @@
 import winston from 'winston';
+import type { Logger } from 'winston';
 
-const logger = winston.createLogger({
+const logger: Logger = winston.createLogger({
   defaultMeta: { service: 'backend' },
   format: winston.format.combine(
     winston.format.timestamp(),

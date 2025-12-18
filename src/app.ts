@@ -1,6 +1,6 @@
-import logger from '#config/logger.js';
-import { HTTP_STATUS } from '#constants/httpStatus.js';
-import { requestId } from '#middleware/requestId.middleware.js';
+import logger from './config/logger';
+import { HTTP_OK } from './constants/httpStatus';
+import { requestId } from './middleware/requestId.middleware';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -50,41 +50,44 @@ app.use(compression());
 app.use(
   morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', {
     stream: {
-      write: (message: string) => logger.info(message.trim()),
+      write: (message: string): void => {
+        logger.info(message.trim());
+      },
     },
   })
 );
 
-import { globalErrorHandler } from '#middleware/error.middleware';
-import authRoutes from '#routes/auth.routes';
-import userRoutes from '#routes/user.routes';
-import { AppError } from '#utils/AppError';
+import type { Router } from 'express';
+
+import { globalErrorHandler } from './middleware/error.middleware';
+import authRoutes from './routes/auth.routes';
+import userRoutes from './routes/user.routes';
+import { AppError } from './utils/AppError';
 
 app.use('/health', (req, res) => {
-  res.status(HTTP_STATUS.OK).json({
+  res.status(HTTP_OK).json({
     message: 'Server is healthy',
-    status: HTTP_STATUS.OK,
+    status: HTTP_OK,
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
   });
 });
 
 // API versioning - v1
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/auth', authRoutes as Router);
+app.use('/api/v1/users', userRoutes as Router);
 
 app.get('/', (req, res) => {
-  res.status(HTTP_STATUS.OK).json({ message: 'Server is running' });
+  res.status(HTTP_OK).json({ message: 'Server is running' });
 });
 
 // Catch-all route for unmatched paths (Express 5 compatible)
 app.use((req, res, next) => {
-  next(
-    new AppError(
-      `Can't find ${req.originalUrl} on this server!`,
-      HTTP_STATUS.NOT_FOUND
-    )
-  );
+  const ErrorClass = AppError as new (
+    message: string,
+    statusCode: number
+  ) => Error;
+  next(new ErrorClass(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
 app.use(globalErrorHandler);

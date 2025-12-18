@@ -1,16 +1,16 @@
-import { db } from '#config/database';
-import logger from '#config/logger';
-import { HTTP_STATUS } from '#constants/httpStatus';
-import { users } from '#models/schema';
-import { UserResponse } from '#types/user.types';
-import { PaginationOptions, PaginationResult } from '#types/utils.types';
-import { AppError } from '#utils/AppError';
-import { hashPassword } from '#utils/hash';
+import { db } from '../config/database';
+import logger from '../config/logger';
+import { HTTP_STATUS } from '../constants/httpStatus';
+import { users } from '../models/schema';
+import { UserResponse } from '../types/user.types';
+import { PaginationOptions, PaginationResult } from '../types/utils.types';
+import { AppError } from '../utils/AppError';
+import { hashPassword } from '../utils/hash';
 import {
   getOffset,
   getPaginationMeta,
   normalizePagination,
-} from '#utils/pagination';
+} from '../utils/pagination';
 import { eq } from 'drizzle-orm';
 
 /**

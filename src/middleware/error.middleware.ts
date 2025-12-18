@@ -1,6 +1,6 @@
-import logger from '#config/logger';
-import { HTTP_STATUS } from '#constants/httpStatus';
-import { AppError } from '#utils/AppError';
+import logger from '../config/logger';
+import { HTTP_STATUS } from '../constants/httpStatus';
+import { AppError } from '../utils/AppError';
 import { Request, Response } from 'express';
 import { ZodError } from 'zod';
 

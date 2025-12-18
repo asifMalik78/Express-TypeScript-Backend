@@ -1,5 +1,5 @@
-import { HTTP_STATUS } from '#constants/httpStatus';
-import { AppError } from '#utils/AppError';
+import { HTTP_STATUS } from '../constants/httpStatus';
+import { AppError } from '../utils/AppError';
 import { NextFunction, Request, Response } from 'express';
 
 /**

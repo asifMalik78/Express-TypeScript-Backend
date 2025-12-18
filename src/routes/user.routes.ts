@@ -4,15 +4,15 @@ import {
   getById,
   remove,
   update,
-} from '#controllers/user.controller';
-import { requireAdmin } from '#middleware/admin.middleware';
-import { authenticate } from '#middleware/auth.middleware';
-import { validate } from '#middleware/validation.middleware';
+} from '../controllers/user.controller';
+import { requireAdmin } from '../middleware/admin.middleware';
+import { authenticate } from '../middleware/auth.middleware';
+import { validate } from '../middleware/validation.middleware';
 import {
   createUserSchema,
   updateUserSchema,
   userIdSchema,
-} from '#validations/user.validation';
+} from '../validations/user.validation';
 import { Router } from 'express';
 import { z } from 'zod';
 

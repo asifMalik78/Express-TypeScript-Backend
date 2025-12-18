@@ -1,5 +1,5 @@
-import { HTTP_STATUS } from '#constants/httpStatus';
-import { ValidationSchemas } from '#types/middleware.types';
+import { HTTP_STATUS } from '../constants/httpStatus';
+import { ValidationSchemas } from '../types/middleware.types';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 

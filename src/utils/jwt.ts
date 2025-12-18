@@ -1,4 +1,4 @@
-import logger from '#config/logger';
+import logger from '../config/logger';
 import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
