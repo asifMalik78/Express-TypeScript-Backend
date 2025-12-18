@@ -5,10 +5,10 @@ import {
   getUserById,
   updateUser,
   deleteUser,
-} from '../services/user.service';
-import { catchAsync } from '../utils/catchAsync';
-import { HTTP_STATUS } from '../constants/httpStatus';
-import logger from '../config/logger';
+} from '#services/user.service';
+import { catchAsync } from '#utils/catchAsync';
+import { HTTP_STATUS } from '#constants/httpStatus';
+import logger from '#config/logger';
 
 /**
  * Create a new user (Admin only)

@@ -2,7 +2,7 @@
  * Pagination utilities
  */
 
-import { PaginationOptions, PaginationResult } from '../types/utils.types';
+import { PaginationOptions, PaginationResult } from '#types/utils.types';
 
 // Re-export types for backward compatibility
 export type { PaginationOptions, PaginationResult };

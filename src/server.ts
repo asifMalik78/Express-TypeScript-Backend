@@ -1,11 +1,10 @@
-import app from './app';
-import logger from './config/logger';
-import { env } from './config/env';
+import app from '#src/app';
+import logger from '#config/logger';
 
-const PORT = env.PORT;
+const PORT = Number(process.env.PORT) || 3000;
 
 const server = app.listen(PORT, () => {
-  logger.info(`🚀 Server running on port ${PORT} in ${env.NODE_ENV} mode`);
+  logger.info(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
 });
 
 // Graceful shutdown

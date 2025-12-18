@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import JwtUtil from '../utils/jwt';
-import { db } from '../config/database';
-import { users, refreshTokens } from '../models/schema';
+import JwtUtil from '#utils/jwt';
+import { db } from '#config/database';
+import { users, refreshTokens } from '#models/schema';
 import { eq, and } from 'drizzle-orm';
-import { HTTP_STATUS } from '../constants/httpStatus';
-import { AppError } from '../utils/AppError';
-import logger from '../config/logger';
+import { HTTP_STATUS } from '#constants/httpStatus';
+import { AppError } from '#utils/AppError';
+import logger from '#config/logger';
 
 /**
  * Authenticate user using access token

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { HTTP_STATUS } from '../constants/httpStatus';
-import { AppError } from '../utils/AppError';
+import { HTTP_STATUS } from '#constants/httpStatus';
+import { AppError } from '#utils/AppError';
 
 /**
  * Middleware to check if user is admin

@@ -1,17 +1,17 @@
-import { db } from '../config/database';
-import { users } from '../models/schema';
+import { db } from '#config/database';
+import { users } from '#models/schema';
 import { eq } from 'drizzle-orm';
-import { hashPassword } from '../utils/hash';
-import { AppError } from '../utils/AppError';
-import { HTTP_STATUS } from '../constants/httpStatus';
-import logger from '../config/logger';
-import { UserResponse } from '../types/user.types';
-import { PaginationOptions, PaginationResult } from '../types/utils.types';
+import { hashPassword } from '#utils/hash';
+import { AppError } from '#utils/AppError';
+import { HTTP_STATUS } from '#constants/httpStatus';
+import logger from '#config/logger';
+import { UserResponse } from '#types/user.types';
+import { PaginationOptions, PaginationResult } from '#types/utils.types';
 import {
   normalizePagination,
   getPaginationMeta,
   getOffset,
-} from '../utils/pagination';
+} from '#utils/pagination';
 
 /**
  * Create a new user (Admin only)

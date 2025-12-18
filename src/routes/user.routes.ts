@@ -5,15 +5,15 @@ import {
   getById,
   update,
   remove,
-} from '../controllers/user.controller';
-import { authenticate } from '../middleware/auth.middleware';
-import { requireAdmin } from '../middleware/admin.middleware';
-import { validate } from '../middleware/validation.middleware';
+} from '#controllers/user.controller';
+import { authenticate } from '#middleware/auth.middleware';
+import { requireAdmin } from '#middleware/admin.middleware';
+import { validate } from '#middleware/validation.middleware';
 import {
   createUserSchema,
   updateUserSchema,
   userIdSchema,
-} from '../validations/user.validation';
+} from '#validations/user.validation';
 import { z } from 'zod';
 
 const router = Router();

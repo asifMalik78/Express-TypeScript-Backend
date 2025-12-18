@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { HTTP_STATUS } from '../constants/httpStatus';
+import { HTTP_STATUS } from '#constants/httpStatus';
 import { z, ZodTypeAny } from 'zod';
-import { ValidationSchemas } from '../types/middleware.types';
+import { ValidationSchemas } from '#types/middleware.types';
 
 /**
  * Validation middleware factory

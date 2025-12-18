@@ -4,12 +4,12 @@ import {
   login as loginService,
   refresh,
   logout as logoutService,
-} from '../services/auth.service';
-import { catchAsync } from '../utils/catchAsync';
-import { HTTP_STATUS } from '../constants/httpStatus';
-import Cookies from '../utils/cookies';
-import { COOKIE_NAMES } from '../constants/tokens';
-import logger from '../config/logger';
+} from '#services/auth.service';
+import { catchAsync } from '#utils/catchAsync';
+import { HTTP_STATUS } from '#constants/httpStatus';
+import Cookies from '#utils/cookies';
+import { COOKIE_NAMES } from '#constants/tokens';
+import logger from '#config/logger';
 
 /**
  * Sign up a new user

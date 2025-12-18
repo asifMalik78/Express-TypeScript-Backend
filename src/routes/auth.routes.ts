@@ -4,18 +4,18 @@ import {
   refreshToken,
   signup,
   logout,
-} from '../controllers/auth.controller';
+} from '#controllers/auth.controller';
 import {
   authenticate,
   authenticateRefreshToken,
-} from '../middleware/auth.middleware';
-import { validate } from '../middleware/validation.middleware';
-import { rateLimit } from '../middleware/rateLimit.middleware';
+} from '#middleware/auth.middleware';
+import { validate } from '#middleware/validation.middleware';
+import { rateLimit } from '#middleware/rateLimit.middleware';
 import {
   signupSchema,
   loginSchema,
   refreshSchema,
-} from '../validations/auth.validation';
+} from '#validations/auth.validation';
 
 const router = Router();
 

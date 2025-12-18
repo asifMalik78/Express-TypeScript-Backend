@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { HTTP_STATUS } from '../constants/httpStatus';
-import { AppError } from '../utils/AppError';
-import logger from '../config/logger';
-import { RateLimitOptions, RateLimitStore } from '../types/middleware.types';
+import { HTTP_STATUS } from '#constants/httpStatus';
+import { AppError } from '#utils/AppError';
+import logger from '#config/logger';
+import { RateLimitOptions, RateLimitStore } from '#types/middleware.types';
 
 const store: RateLimitStore = {};
 

@@ -1,4 +1,4 @@
-import { db } from '../config/database';
+import { db } from '#config/database';
 
 /**
  * Execute a function within a database transaction

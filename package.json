@@ -3,21 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
-  "type": "module",
-  "imports": {
-    "@src/*":"./src/*",
-    "@config/*":"./config/*",
-    "@constants/*":"./constants/*",
-    "@controllers/*":"./controllers/*",
-    "@middleware/*":"./middleware/*",
-    "@models/*":"./models/*",
-    "@routes/*":"./routes/*",
-    "@services/*":"./services/*",
-    "@types/*":"./types/*",
-    "@utils/*":"./utils/*",
-    "@validations/*":"./validations/*",
-    "@tests/*":"./tests/*"
-  },
   "scripts": {
     "start": "node dist/src/index.js",
     "build": "npx tsc -p tsconfig.build.json",

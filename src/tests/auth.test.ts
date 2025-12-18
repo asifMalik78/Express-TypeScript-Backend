@@ -1,7 +1,7 @@
 import request from 'supertest';
-import app from '../app';
-import { db } from '../config/database';
-import { users, refreshTokens } from '../models/schema';
+import app from '#src/app';
+import { db } from '#config/database';
+import { users, refreshTokens } from '#models/schema';
 import { eq } from 'drizzle-orm';
 
 // Check if database is available before running tests

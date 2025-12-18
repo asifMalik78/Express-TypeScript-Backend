@@ -1,18 +1,18 @@
-import { db } from '../config/database';
-import { users, refreshTokens } from '../models/schema';
+import { db } from '#config/database';
+import { users, refreshTokens } from '#models/schema';
 import { eq, and } from 'drizzle-orm';
-import { hashPassword, comparePassword } from '../utils/hash';
-import JwtUtil from '../utils/jwt';
-import { AppError } from '../utils/AppError';
-import { HTTP_STATUS } from '../constants/httpStatus';
-import { TOKEN_EXPIRATION } from '../constants/tokens';
-import logger from '../config/logger';
+import { hashPassword, comparePassword } from '#utils/hash';
+import JwtUtil from '#utils/jwt';
+import { AppError } from '#utils/AppError';
+import { HTTP_STATUS } from '#constants/httpStatus';
+import { TOKEN_EXPIRATION } from '#constants/tokens';
+import logger from '#config/logger';
 import {
   RegisterInput,
   LoginInput,
   AuthResponse,
   RefreshTokenResponse,
-} from '../types/user.types';
+} from '#types/user.types';
 
 /**
  * Register a new user

@@ -1,9 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError } from '../utils/AppError';
+import { AppError } from '#utils/AppError';
 import { ZodError } from 'zod';
-import logger from '../config/logger';
-import { HTTP_STATUS } from '../constants/httpStatus';
-import { env } from '../config/env';
+import logger from '#config/logger';
+import { HTTP_STATUS } from '#constants/httpStatus';
 
 export const globalErrorHandler = (
   err: Error | AppError | ZodError,
@@ -89,8 +88,8 @@ export const globalErrorHandler = (
   return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
     status: 'error',
     message:
-      env.NODE_ENV === 'production' ? 'Something went wrong!' : err.message,
+      process.env.NODE_ENV === 'production' ? 'Something went wrong!' : err.message,
     requestId,
-    ...(env.NODE_ENV !== 'production' && { stack: err.stack }),
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
   });
 };

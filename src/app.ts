@@ -4,10 +4,9 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import compression from 'compression';
-import logger from './config/logger';
-import { HTTP_STATUS } from './constants/httpStatus';
-import { requestId } from './middleware/requestId.middleware';
-import { env } from './config/env';
+import logger from '#config/logger';
+import { HTTP_STATUS } from '#constants/httpStatus';
+import { requestId } from '#middleware/requestId.middleware';
 
 const app = express();
 
@@ -49,17 +48,17 @@ app.use(compression());
 
 // Logging middleware
 app.use(
-  morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev', {
+  morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', {
     stream: {
       write: (message: string) => logger.info(message.trim()),
     },
   })
 );
 
-import authRoutes from './routes/auth.routes';
-import userRoutes from './routes/user.routes';
-import { globalErrorHandler } from './middleware/error.middleware';
-import { AppError } from './utils/AppError';
+import authRoutes from '#routes/auth.routes';
+import userRoutes from '#routes/user.routes';
+import { globalErrorHandler } from '#middleware/error.middleware';
+import { AppError } from '#utils/AppError';
 
 app.use('/health', (req, res) => {
   res.status(HTTP_STATUS.OK).json({
