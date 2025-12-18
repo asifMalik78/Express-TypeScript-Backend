@@ -5,11 +5,16 @@ class Cookies {
   static get(req: Request, name: string): string | undefined {
     return req.cookies[name] as string | undefined;
   }
-  static getOptions() {
+  static getOptions(): {
+    httpOnly: boolean;
+    maxAge: number;
+    sameSite: 'lax' | 'none' | 'strict';
+    secure: boolean;
+  } {
     return {
       httpOnly: true,
       maxAge: 60 * 60 * 24 * 7,
-      sameSite: 'lax',
+      sameSite: 'lax' as const,
       secure: process.env.NODE_ENV === 'production',
     };
   }
