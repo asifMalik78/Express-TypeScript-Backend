@@ -11,19 +11,7 @@ import { requestId } from '#middleware/requestId.middleware';
 const app = express();
 
 // Security middleware
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'https:'],
-      },
-    },
-    crossOriginEmbedderPolicy: false,
-  })
-);
+app.use(helmet());
 
 // CORS configuration
 app.use(
