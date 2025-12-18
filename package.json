@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node dist/src/index.js",
     "build": "npx tsc -p tsconfig.build.json",
-    "build:dev": "npx tsc -p tsconfig.build.json && node --watch dist/src/index.js",
+    "build:dev": "npx tsc -p tsconfig.build.json && node --watch dist/index.js",
     "dev": "npx tsx --watch src/index.ts",
     "type-check": "npx tsc --noEmit",
     "lint": "npx eslint .",

@@ -5,7 +5,7 @@ const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 
 const server = app.listen(PORT, () => {
   logger.info(
-    `🚀 Server running on port ${String(PORT)} in ${process.env.NODE_ENV ?? 'development'} mode`
+    `🚀 Server running http://localhost:${String(PORT)} in ${process.env.NODE_ENV ?? 'development'} mode`
   );
 });
 
