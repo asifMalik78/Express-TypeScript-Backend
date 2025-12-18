@@ -1,46 +1,24 @@
-import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
-import globals from 'globals';
+import eslint from '@eslint/js';
+import tslint from 'typescript-eslint';
+import perfectionist from 'eslint-';
+import eslintPluginPrettier from 'eslint-plugin-prettier/recommended';
 
-export default [
-  js.configs.recommended,
-  ...tseslint.configs.recommended,
+
+export default tslint.config(
+  {
+    ignores: ["**/*.js" , "node_modules" , "dist"]
+  },
+  eslint.configs.recommended,
+  tslint.configs.strictTypeChecked,
+  tslint.configs.stylisticTypeChecked,
   {
     languageOptions: {
-      ecmaVersion: 2022,
-      sourceType: 'module',
-      globals: {
-        ...globals.node,
-        ...globals.jest,
-      },
-    },
-    rules: {
-      // User explicit rules (that don't conflict with Prettier)
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      'no-console': 'off',
-      'prefer-const': 'error',
-      'no-var': 'error',
-      'object-shorthand': 'error',
-      'prefer-arrow-callback': 'error',
-
-      // Formatting rules managed by Prettier (commented out to avoid conflicts)
-      // 'indent': ['error', 2, { SwitchCase: 1 }],
-      // 'linebreak-style': ['error', 'unix'],
-      // 'quotes': ['error', 'single'],
-      // 'semi': ['error', 'always'],
-    },
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname
+      }
+    }
   },
-  {
-    files: ['tests/**/*.{js,ts}'],
-    languageOptions: {
-      globals: {
-        ...globals.jest,
-      },
-    },
-  },
-  {
-    ignores: ['node_modules/**', 'coverage/**', 'logs/**', 'drizzle/**'],
-  },
-  eslintPluginPrettierRecommended,
-];
+  perfectionist.configs["recommended-natural"],
+  eslintPluginPrettier.configs["recommended"]
+)
