@@ -7,11 +7,7 @@ import {
   refresh,
   register,
 } from '../services/auth.service';
-import {
-  AuthResponse,
-  AuthUser,
-  RefreshTokenResponse,
-} from '../types/user.types';
+import { AuthResponse, RefreshTokenResponse } from '../types/user.types';
 import { catchAsync } from '../utils/catchAsync';
 import Cookies from '../utils/cookies';
 import { Request, Response } from 'express';
@@ -103,8 +99,9 @@ export const logout = catchAsync(async (req: Request, res: Response) => {
   Cookies.remove(res, COOKIE_NAMES.ACCESS_TOKEN);
   Cookies.remove(res, COOKIE_NAMES.REFRESH_TOKEN);
 
-  const user = req.user as AuthUser | undefined;
-  logger.info('User logged out', { userId: user?.id });
+  logger.info('User logged out', {
+    userId: req.user ? (req.user as { id: number }).id : undefined,
+  });
 
   return res.status(HTTP_STATUS.OK).json({
     message: 'Logged out successfully',
