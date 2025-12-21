@@ -93,7 +93,7 @@ export const getAllUsers = async (
     .offset(offset);
 
   return {
-    data: userList.map(user => ({
+    data: userList.map((user: (typeof userList)[number]) => ({
       email: user.email,
       id: user.id,
       name: user.name,

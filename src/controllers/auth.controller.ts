@@ -5,7 +5,7 @@ import {
   login as loginService,
   logout as logoutService,
   refresh,
-  register,
+  register as registerService,
 } from '../services/auth.service';
 import { AuthResponse, RefreshTokenResponse } from '../types/user.types';
 import { catchAsync } from '../utils/catchAsync';
@@ -21,7 +21,7 @@ export const signup = catchAsync(async (req: Request, res: Response) => {
     name: string;
     password: string;
   };
-  const result: AuthResponse = await register({ email, name, password });
+  const result: AuthResponse = await registerService({ email, name, password });
 
   // Set cookies
   Cookies.set(res, COOKIE_NAMES.ACCESS_TOKEN, result.access_token);

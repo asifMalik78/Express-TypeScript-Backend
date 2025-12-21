@@ -13,7 +13,7 @@ import { validate } from '../middleware/validation.middleware';
 import {
   loginSchema,
   refreshSchema,
-  signupSchema,
+  registerSchema,
 } from '../validations/auth.validation';
 import { Router } from 'express';
 
@@ -27,11 +27,11 @@ const authRateLimit = rateLimit({
 });
 
 /**
- * @route   POST /api/v1/auth/signup
+ * @route   POST /api/v1/auth/register
  * @desc    Register a new user
  * @access  Public
  */
-router.post('/signup', authRateLimit, validate(signupSchema), signup);
+router.post('/register', authRateLimit, validate(registerSchema), signup);
 
 /**
  * @route   POST /api/v1/auth/login

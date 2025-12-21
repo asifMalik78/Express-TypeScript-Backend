@@ -1,14 +1,21 @@
 import logger from '../config/logger';
 import { HTTP_STATUS } from '../constants/httpStatus';
 import { AppError } from '../utils/AppError';
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
 
 export const globalErrorHandler = (
   err: AppError | Error | ZodError,
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
+  // If response has already been sent, delegate to default Express error handler
+  if (res.headersSent) {
+    next(err);
+    return;
+  }
+
   const requestId = req.id ?? 'unknown';
 
   // Handle Zod validation errors
@@ -72,6 +79,34 @@ export const globalErrorHandler = (
       message: 'Token expired',
       requestId,
       status: 'fail',
+    });
+  }
+
+  // Handle database connection errors
+  if (
+    err.message.includes('Failed query') ||
+    err.message.includes('fetch failed') ||
+    err.message.includes('connect') ||
+    err.message.includes('ECONNREFUSED') ||
+    err.message.includes('ENOTFOUND')
+  ) {
+    logger.error('Database connection error', {
+      error: err.message,
+      method: req.method,
+      path: req.path,
+      requestId,
+    });
+
+    return res.status(HTTP_STATUS.SERVICE_UNAVAILABLE).json({
+      message:
+        process.env.NODE_ENV === 'production'
+          ? 'Database service is temporarily unavailable. Please try again later.'
+          : 'Database connection failed. Please check your DATABASE_URL and ensure the database is running.',
+      requestId,
+      status: 'error',
+      ...(process.env.NODE_ENV !== 'production' && {
+        details: err.message,
+      }),
     });
   }
 

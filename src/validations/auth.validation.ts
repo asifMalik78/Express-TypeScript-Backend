@@ -16,21 +16,31 @@ const passwordSchema = z
 
 /**
  * Email validation schema
- * Using refine for email validation as .email() is deprecated in Zod v4
+ * Comprehensive email validation with proper regex pattern
  */
 const emailSchema = z
   .string()
+  .min(1, 'Email is required')
   .trim()
   .toLowerCase()
   .max(255, 'Email must be less than 255 characters')
-  .refine(val => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), {
-    message: 'Invalid email address',
-  });
+  .refine(
+    val => {
+      // More comprehensive email regex pattern (RFC 5322 compliant)
+      // Email is already lowercased, so no need for case-insensitive flag
+      const emailRegex =
+        /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+      return emailRegex.test(val);
+    },
+    {
+      message: 'Invalid email address format',
+    }
+  );
 
 /**
- * Signup validation schema
+ * Register validation schema
  */
-export const signupSchema = z.object({
+export const registerSchema = z.object({
   email: emailSchema,
   name: z
     .string()
