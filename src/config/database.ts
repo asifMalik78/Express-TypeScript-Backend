@@ -4,8 +4,10 @@ import { drizzle } from 'drizzle-orm/neon-http';
 
 const nodeEnv = process.env.NODE_ENV ?? 'development';
 
-if (nodeEnv === 'development') {
-  neonConfig.fetchEndpoint = 'http://neon-local:5432/sql';
+// Only use neon-local endpoint if explicitly set via environment variable
+// This allows local development with Docker or direct Neon connection
+if (nodeEnv === 'developments' && process.env.NEON_LOCAL_ENDPOINT) {
+  neonConfig.fetchEndpoint = process.env.NEON_LOCAL_ENDPOINT;
   neonConfig.useSecureWebSocket = false;
   neonConfig.poolQueryViaFetch = true;
 }

@@ -8,6 +8,7 @@ import {
   register as registerService,
 } from '../services/auth.service';
 import { AuthResponse, RefreshTokenResponse } from '../types/user.types';
+import { AppError } from '../utils/AppError';
 import { catchAsync } from '../utils/catchAsync';
 import Cookies from '../utils/cookies';
 import { Request, Response } from 'express';
@@ -64,22 +65,47 @@ export const login = catchAsync(async (req: Request, res: Response) => {
 
 /**
  * Refresh access token
+ * Gets refresh token from cookies (dev) or body (test fallback)
+ * If refresh token expires, logs out user by clearing cookies
  */
 export const refreshToken = catchAsync(async (req: Request, res: Response) => {
-  const { refreshToken: requestRefreshToken } = req.body as {
-    refreshToken: string;
-  };
-  const result: RefreshTokenResponse = await refresh(requestRefreshToken);
+  // Get refresh token from middleware (which got it from cookies or body)
+  const refreshTokenFromRequest = req.refreshToken;
 
-  // Update refresh token cookie
-  Cookies.set(res, COOKIE_NAMES.REFRESH_TOKEN, result.refresh_token);
+  if (!refreshTokenFromRequest) {
+    throw new AppError(
+      'Refresh token not found in request',
+      HTTP_STATUS.UNAUTHORIZED
+    );
+  }
 
-  return res.status(HTTP_STATUS.OK).json({
-    data: {
-      access_token: result.access_token,
-    },
-    status: 'success',
-  });
+  try {
+    const result: RefreshTokenResponse = await refresh(refreshTokenFromRequest);
+
+    // Set new access token cookie
+    Cookies.set(res, COOKIE_NAMES.ACCESS_TOKEN, result.access_token);
+
+    return res.status(HTTP_STATUS.OK).json({
+      data: {
+        access_token: result.access_token,
+      },
+      status: 'success',
+    });
+  } catch (error) {
+    // If refresh token expired or invalid, logout user by clearing cookies
+    if (
+      (error instanceof AppError &&
+        error.statusCode === HTTP_STATUS.UNAUTHORIZED) ||
+      (error instanceof Error &&
+        (error.message.includes('expired') ||
+          error.message.includes('Invalid refresh token')))
+    ) {
+      logger.info('Logging out user due to expired/invalid refresh token');
+      Cookies.remove(res, COOKIE_NAMES.ACCESS_TOKEN);
+      Cookies.remove(res, COOKIE_NAMES.REFRESH_TOKEN);
+    }
+    throw error;
+  }
 });
 
 /**

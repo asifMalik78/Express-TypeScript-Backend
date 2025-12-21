@@ -22,7 +22,9 @@ export const validate = (schemas: ValidationSchemas | z.ZodType) => {
 
       if (!result.success) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
-          errors: result.error.issues,
+          errors: result.error.issues.map(issue => ({
+            message: issue.message,
+          })),
           message: 'Validation failed',
           requestId: req.id,
           status: 'fail',
@@ -36,7 +38,7 @@ export const validate = (schemas: ValidationSchemas | z.ZodType) => {
 
     // Multiple schemas provided
     const validationSchemas = schemas as ValidationSchemas;
-    const errors: z.core.$ZodIssue[] = [];
+    const errors: z.ZodError['issues'] = [];
 
     // Validate body
     if (validationSchemas.body) {
@@ -54,7 +56,14 @@ export const validate = (schemas: ValidationSchemas | z.ZodType) => {
       if (!result.success) {
         errors.push(...result.error.issues);
       } else {
-        req.query = result.data as typeof req.query;
+        // In Express 5, req.query is read-only, so store validated data in custom property
+        req.validatedQuery = result.data as Record<string, unknown>;
+        // Also merge into req.query for backward compatibility (if possible)
+        try {
+          Object.assign(req.query, result.data);
+        } catch {
+          // If assignment fails, validatedQuery will be used
+        }
       }
     }
 
@@ -64,13 +73,20 @@ export const validate = (schemas: ValidationSchemas | z.ZodType) => {
       if (!result.success) {
         errors.push(...result.error.issues);
       } else {
-        req.params = result.data as typeof req.params;
+        // In Express 5, req.params is read-only, so store validated data in custom property
+        req.validatedParams = result.data as Record<string, unknown>;
+        // Also merge into req.params for backward compatibility (if possible)
+        try {
+          Object.assign(req.params, result.data);
+        } catch {
+          // If assignment fails, validatedParams will be used
+        }
       }
     }
 
     if (errors.length > 0) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
-        errors,
+        errors: errors.map(issue => ({ message: issue.message })),
         message: 'Validation failed',
         requestId: req.id,
         status: 'fail',

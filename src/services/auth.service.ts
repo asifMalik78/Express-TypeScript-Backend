@@ -121,6 +121,8 @@ export const login = async ({
 
 /**
  * Refresh access token using refresh token
+ * Access tokens are stateless and not stored in DB
+ * If refresh token expires, user should be logged out
  */
 export const refresh = async (
   requestRefreshToken: string
@@ -132,7 +134,7 @@ export const refresh = async (
   }
 
   // Check if token exists in DB and is not revoked
-  const [storedRefreshToken] = await db
+  const refreshTokenRecords = await db
     .select()
     .from(refreshTokens)
     .where(
@@ -143,48 +145,41 @@ export const refresh = async (
     )
     .limit(1);
 
-  // storedRefreshToken will always exist if decoded.userId exists (checked above)
-  // This check is for type safety
+  if (refreshTokenRecords.length === 0) {
+    throw new AppError('Invalid refresh token', HTTP_STATUS.UNAUTHORIZED);
+  }
 
-  // Check if token has expired
+  const [storedRefreshToken] = refreshTokenRecords;
+
+  // Check if token has expired - if expired, revoke it and throw error
+  // The controller will handle logout (clearing cookies)
   if (new Date() > storedRefreshToken.expiresAt) {
     logger.warn('Expired refresh token used', {
       tokenId: storedRefreshToken.id,
       userId: decoded.userId,
     });
+    // Revoke expired refresh token
+    await db
+      .update(refreshTokens)
+      .set({
+        isRevoked: true,
+        revokedAt: new Date(),
+      })
+      .where(eq(refreshTokens.id, storedRefreshToken.id));
     throw new AppError('Refresh token has expired', HTTP_STATUS.UNAUTHORIZED);
   }
 
-  // Generate new tokens
+  // Generate new access token (stateless, not stored in DB)
   const newAccessToken = JwtUtil.generateAccessToken({
     userId: decoded.userId,
   });
-  const newRefreshToken = JwtUtil.generateRefreshToken({
+
+  logger.info('Access token refreshed successfully', {
     userId: decoded.userId,
   });
-
-  // Revoke old refresh token
-  await db
-    .update(refreshTokens)
-    .set({
-      isRevoked: true,
-      revokedAt: new Date(),
-    })
-    .where(eq(refreshTokens.id, storedRefreshToken.id));
-
-  // Store new refresh token
-  // Access token is stateless, no need to store in DB
-  await db.insert(refreshTokens).values({
-    expiresAt: new Date(Date.now() + TOKEN_EXPIRATION.REFRESH_TOKEN),
-    token: newRefreshToken,
-    userId: decoded.userId,
-  });
-
-  logger.info('Tokens refreshed successfully', { userId: decoded.userId });
 
   return {
     access_token: newAccessToken,
-    refresh_token: newRefreshToken,
   };
 };
 

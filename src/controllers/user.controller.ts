@@ -36,8 +36,17 @@ export const create = catchAsync(async (req: Request, res: Response) => {
  * Get all users with pagination (Admin only)
  */
 export const getAll = catchAsync(async (req: Request, res: Response) => {
-  const page = req.query.page ? Number(req.query.page) : undefined;
-  const limit = req.query.limit ? Number(req.query.limit) : undefined;
+  // Use validated query data if available (already transformed to numbers)
+  // Otherwise fall back to req.query and convert manually
+  const validatedQuery = req.validatedQuery as
+    | { page?: number; limit?: number }
+    | undefined;
+  const page =
+    validatedQuery?.page ??
+    (req.query.page ? Number(req.query.page) : undefined);
+  const limit =
+    validatedQuery?.limit ??
+    (req.query.limit ? Number(req.query.limit) : undefined);
 
   const result = await getAllUsers({ limit, page });
 
@@ -52,8 +61,12 @@ export const getAll = catchAsync(async (req: Request, res: Response) => {
  * Get user by ID (Admin only)
  */
 export const getById = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const user = await getUserById(Number(id));
+  // Use validated params if available (already transformed to number)
+  // Otherwise fall back to req.params and convert manually
+  const validatedParams = req.validatedParams as { id?: number } | undefined;
+  const id = validatedParams?.id ?? Number(req.params.id);
+
+  const user = await getUserById(id);
 
   return res.status(HTTP_STATUS.OK).json({
     data: {
@@ -67,7 +80,11 @@ export const getById = catchAsync(async (req: Request, res: Response) => {
  * Update user (Admin only)
  */
 export const update = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  // Use validated params if available (already transformed to number)
+  // Otherwise fall back to req.params and convert manually
+  const validatedParams = req.validatedParams as { id?: number } | undefined;
+  const id = validatedParams?.id ?? Number(req.params.id);
+
   const { email, name, password, role } = req.body as {
     email?: string;
     name?: string;
@@ -75,7 +92,7 @@ export const update = catchAsync(async (req: Request, res: Response) => {
     role?: string;
   };
 
-  const user = await updateUser(Number(id), {
+  const user = await updateUser(id, {
     email,
     name,
     password,
@@ -99,13 +116,20 @@ export const update = catchAsync(async (req: Request, res: Response) => {
  * Delete user (Admin only)
  */
 export const remove = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  await deleteUser(Number(id));
+  // Use validated params if available (already transformed to number)
+  // Otherwise fall back to req.params and convert manually
+  const validatedParams = req.validatedParams as { id?: number } | undefined;
+  const id = validatedParams?.id ?? Number(req.params.id);
+
+  await deleteUser(id);
 
   logger.info('User deleted', {
     deletedBy: req.user?.id,
-    userId: Number(id),
+    userId: id,
   });
 
-  return res.status(HTTP_STATUS.NO_CONTENT).send();
+  return res.status(HTTP_STATUS.OK).json({
+    message: 'User deleted successfully',
+    status: 'success',
+  });
 });

@@ -33,7 +33,6 @@ export interface LoginInput {
 // Refresh token response
 export interface RefreshTokenResponse {
   access_token: string;
-  refresh_token: string;
 }
 
 // User registration input

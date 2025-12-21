@@ -1,6 +1,7 @@
 import { db } from '../config/database';
 import logger from '../config/logger';
 import { HTTP_STATUS } from '../constants/httpStatus';
+import { COOKIE_NAMES } from '../constants/tokens';
 import { refreshTokens, users } from '../models/schema';
 import { AppError } from '../utils/AppError';
 import JwtUtil from '../utils/jwt';
@@ -58,7 +59,7 @@ export const authenticate: RequestHandler = async (
 };
 
 /**
- * Authenticate user using refresh token from cookies
+ * Authenticate user using refresh token from cookies (dev) or body (test fallback)
  */
 export const authenticateRefreshToken: RequestHandler = async (
   req: Request,
@@ -66,9 +67,11 @@ export const authenticateRefreshToken: RequestHandler = async (
   next: NextFunction
 ) => {
   try {
+    // Get refresh token from cookies first (dev), then body as fallback (test)
     const body = req.body as undefined | { refreshToken?: string };
     const refreshToken =
-      body?.refreshToken ?? (req.cookies.refresh_token as string | undefined);
+      (req.cookies[COOKIE_NAMES.REFRESH_TOKEN] as string | undefined) ??
+      body?.refreshToken;
 
     if (!refreshToken) {
       throw new AppError('Refresh token required', HTTP_STATUS.UNAUTHORIZED);
@@ -80,7 +83,7 @@ export const authenticateRefreshToken: RequestHandler = async (
     }
 
     // Check if token exists in DB and is not revoked
-    const [refreshTokenRecord] = await db
+    const refreshTokenRecords = await db
       .select()
       .from(refreshTokens)
       .where(
@@ -91,10 +94,13 @@ export const authenticateRefreshToken: RequestHandler = async (
       )
       .limit(1);
 
-    // refreshTokenRecord will always exist if decoded.userId exists (checked above)
-    // This check is for type safety
+    if (refreshTokenRecords.length === 0) {
+      throw new AppError('Invalid refresh token', HTTP_STATUS.UNAUTHORIZED);
+    }
 
-    // Check if token has expired
+    const [refreshTokenRecord] = refreshTokenRecords;
+
+    // Check if token has expired - if expired, we'll logout the user
     const now = Date.now();
     const expiresAt = refreshTokenRecord.expiresAt.getTime();
     if (now > expiresAt) {
@@ -103,12 +109,23 @@ export const authenticateRefreshToken: RequestHandler = async (
         tokenId: refreshTokenRecord.id,
         userId: decoded.userId,
       });
+      // Revoke the expired token
+      await db
+        .update(refreshTokens)
+        .set({
+          isRevoked: true,
+          revokedAt: new Date(),
+        })
+        .where(eq(refreshTokens.id, refreshTokenRecord.id));
       throw new AppError('Refresh token expired', HTTP_STATUS.UNAUTHORIZED);
     }
 
     req.user = {
       id: decoded.userId,
     };
+
+    // Store refresh token in request for use in controller
+    req.refreshToken = refreshToken;
 
     next();
   } catch (error) {

@@ -61,7 +61,12 @@ export const loginSchema = z.object({
 
 /**
  * Refresh token validation schema
+ * refreshToken is optional - will be read from cookies first, body as fallback
  */
 export const refreshSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token is required').trim(),
+  refreshToken: z
+    .string()
+    .min(1, 'Refresh token is required')
+    .trim()
+    .optional(),
 });
