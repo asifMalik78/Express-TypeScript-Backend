@@ -9,19 +9,35 @@ const server = app.listen(PORT, () => {
   );
 });
 
+// Track if shutdown is in progress
+let isShuttingDown = false;
+
 // Graceful shutdown
 const gracefulShutdown = (signal: string) => {
+  if (isShuttingDown) {
+    logger.warn('Shutdown already in progress, forcing exit...');
+    process.exit(1);
+    return;
+  }
+
+  isShuttingDown = true;
   logger.info(`${signal} received. Starting graceful shutdown...`);
 
+  // Stop accepting new connections
   server.close(() => {
     logger.info('HTTP server closed');
     process.exit(0);
   });
 
-  // Force close after 10 seconds
+  // Force close all connections after 10 seconds
   setTimeout(() => {
-    logger.error('Forced shutdown after timeout');
-    process.exit(1);
+    logger.error('Forced shutdown after timeout - closing all connections');
+    if (typeof server.closeAllConnections === 'function') {
+      server.closeAllConnections();
+    }
+    setTimeout(() => {
+      process.exit(1);
+    }, 1000);
   }, 10000);
 };
 
@@ -33,15 +49,32 @@ process.on('SIGINT', () => {
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (err: Error) => {
-  logger.error('UNHANDLED REJECTION! 💥 Shutting down...', err);
-  server.close(() => {
-    process.exit(1);
+process.on('unhandledRejection', (reason: unknown) => {
+  const err = reason instanceof Error ? reason : new Error(String(reason));
+  logger.error('UNHANDLED REJECTION! 💥', {
+    error: err.message,
+    stack: err.stack,
   });
+
+  // In development, don't shutdown on unhandled rejections - just log them
+  // This prevents tsx --watch from constantly restarting
+  if (process.env.NODE_ENV === 'development') {
+    logger.warn('Continuing in development mode despite unhandled rejection');
+    return;
+  }
+
+  // In production, shutdown gracefully
+  if (!isShuttingDown) {
+    gracefulShutdown('unhandledRejection');
+  }
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err: Error) => {
-  logger.error('UNCAUGHT EXCEPTION! 💥 Shutting down...', err);
+  logger.error('UNCAUGHT EXCEPTION! 💥 Shutting down...', {
+    error: err.message,
+    stack: err.stack,
+  });
+  // Uncaught exceptions are always critical - exit immediately
   process.exit(1);
 });
