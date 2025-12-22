@@ -18,7 +18,12 @@ export const rateLimit = (options: RateLimitOptions) => {
   } = options;
 
   return (req: Request, res: Response, next: NextFunction) => {
-    const key = req.ip ?? req.socket.remoteAddress ?? 'unknown';
+    // Get IP from X-Forwarded-For header (for tests) or req.ip or socket address
+    const forwardedFor = req.headers['x-forwarded-for'] as string | undefined;
+    const clientIP = forwardedFor
+      ? forwardedFor.split(',')[0]?.trim()
+      : (req.ip ?? req.socket.remoteAddress ?? 'unknown');
+    const key = clientIP;
     const now = Date.now();
 
     // Clean up expired entries

@@ -33,7 +33,7 @@ export const authenticate: RequestHandler = async (
     }
 
     // Fetch user details from DB to ensure user exists and is active
-    const [user] = await db
+    const userRecords = await db
       .select({
         email: users.email,
         id: users.id,
@@ -43,8 +43,12 @@ export const authenticate: RequestHandler = async (
       .where(eq(users.id, decoded.userId))
       .limit(1);
 
-    // User will always exist if decoded.userId exists (checked above)
-    // This check is for type safety
+    // Check if user exists
+    if (userRecords.length === 0) {
+      throw new AppError('User not found', HTTP_STATUS.UNAUTHORIZED);
+    }
+
+    const user = userRecords[0];
 
     req.user = {
       email: user.email,

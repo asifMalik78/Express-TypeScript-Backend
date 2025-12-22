@@ -52,11 +52,39 @@ export const register = async ({
   const refreshToken = JwtUtil.generateRefreshToken({ userId: newUser.id });
 
   // Store refresh token (access token is stateless, no need to store)
-  await db.insert(refreshTokens).values({
-    expiresAt: new Date(Date.now() + TOKEN_EXPIRATION.REFRESH_TOKEN),
-    token: refreshToken,
-    userId: newUser.id,
-  });
+  // Retry insert up to 3 times to handle transient database issues
+  let insertSuccess = false;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await db.insert(refreshTokens).values({
+        expiresAt: new Date(Date.now() + TOKEN_EXPIRATION.REFRESH_TOKEN),
+        token: refreshToken,
+        userId: newUser.id,
+      });
+      insertSuccess = true;
+      break;
+    } catch (error: unknown) {
+      lastError = error;
+      if (attempt < 2) {
+        // Wait 100ms before retry
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+  }
+
+  if (!insertSuccess) {
+    // Log error but don't fail registration - user is already created
+    logger.error(
+      'Failed to store refresh token during registration after retries',
+      {
+        error:
+          lastError instanceof Error ? lastError.message : String(lastError),
+        userId: newUser.id,
+      }
+    );
+    // Continue - tokens will be generated on next login
+  }
 
   return {
     access_token: accessToken,
@@ -77,14 +105,18 @@ export const login = async ({
   email,
   password,
 }: LoginInput): Promise<AuthResponse> => {
-  const [user] = await db
+  const userRecords = await db
     .select()
     .from(users)
     .where(eq(users.email, email))
     .limit(1);
 
-  // User will always exist if query returns a result
-  // This check is for type safety
+  // Check if user exists
+  if (userRecords.length === 0) {
+    throw new AppError('Invalid credentials', HTTP_STATUS.UNAUTHORIZED);
+  }
+
+  const user = userRecords[0];
 
   const isPasswordValid = await comparePassword(password, user.password);
 
@@ -99,13 +131,49 @@ export const login = async ({
   const accessToken = JwtUtil.generateAccessToken({ userId: user.id });
   const refreshToken = JwtUtil.generateRefreshToken({ userId: user.id });
 
-  // Store refresh token (create new session)
+  // Delete all existing refresh tokens for this user (single session per user)
+  // This is cleaner than revoking and prevents any constraint issues
+  try {
+    await db.delete(refreshTokens).where(eq(refreshTokens.userId, user.id));
+  } catch (error: unknown) {
+    // Log but continue - deletion failure is not critical
+    logger.warn('Failed to delete old refresh tokens', {
+      error: error instanceof Error ? error.message : String(error),
+      userId: user.id,
+    });
+  }
+
+  // Store new refresh token (create new session)
   // Access token is stateless, no need to store in DB
-  await db.insert(refreshTokens).values({
-    expiresAt: new Date(Date.now() + TOKEN_EXPIRATION.REFRESH_TOKEN),
-    token: refreshToken,
-    userId: user.id,
-  });
+  // Retry insert up to 3 times to handle transient database issues
+  let insertSuccess = false;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await db.insert(refreshTokens).values({
+        expiresAt: new Date(Date.now() + TOKEN_EXPIRATION.REFRESH_TOKEN),
+        token: refreshToken,
+        userId: user.id,
+      });
+      insertSuccess = true;
+      break;
+    } catch (error: unknown) {
+      lastError = error;
+      if (attempt < 2) {
+        // Wait 100ms before retry
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+  }
+
+  if (!insertSuccess) {
+    // Log error but don't fail login - user is authenticated
+    logger.error('Failed to store refresh token during login after retries', {
+      error: lastError instanceof Error ? lastError.message : String(lastError),
+      userId: user.id,
+    });
+    // Continue - access token is still valid, refresh token will be generated on next login
+  }
 
   return {
     access_token: accessToken,

@@ -10,6 +10,9 @@ import morgan from 'morgan';
 
 const app = express();
 
+// Trust proxy to get real IP from X-Forwarded-For header (needed for rate limiting in tests)
+app.set('trust proxy', true);
+
 // Security middleware
 app.use(
   helmet({

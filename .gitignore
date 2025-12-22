@@ -8,4 +8,4 @@ public/readme/module-thumbnail.webp
 npm-debug.log
 dist/
 dist/*
-logs/
+logs/*

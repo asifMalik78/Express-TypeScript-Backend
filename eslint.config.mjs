@@ -9,6 +9,8 @@ export default tslint.config(
       'node_modules',
       'dist',
       'drizzle.config.ts',
+      'vitest.config.ts',
+      'vitest.setup.ts',
       'eslint.config.mjs',
     ],
   },

@@ -107,7 +107,7 @@ export const getAllUsers = async (
  * Get user by ID (Admin only)
  */
 export const getUserById = async (userId: number): Promise<UserResponse> => {
-  const [user] = await db
+  const userRecords = await db
     .select({
       email: users.email,
       id: users.id,
@@ -118,8 +118,11 @@ export const getUserById = async (userId: number): Promise<UserResponse> => {
     .where(eq(users.id, userId))
     .limit(1);
 
-  // User will always exist if query returns a result
-  // This check is for type safety
+  if (userRecords.length === 0) {
+    throw new AppError('User not found', HTTP_STATUS.NOT_FOUND);
+  }
+
+  const user = userRecords[0];
 
   return {
     email: user.email,
@@ -142,14 +145,17 @@ export const updateUser = async (
   }
 ): Promise<UserResponse> => {
   // Check if user exists
-  const [existingUser] = await db
+  const existingUserRecords = await db
     .select()
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
 
-  // existingUser will always exist if query returns a result
-  // This check is for type safety
+  if (existingUserRecords.length === 0) {
+    throw new AppError('User not found', HTTP_STATUS.NOT_FOUND);
+  }
+
+  const existingUser = existingUserRecords[0];
 
   // Check if email is being changed and if it's already taken
   if (data.email && data.email !== existingUser.email) {
@@ -185,11 +191,17 @@ export const updateUser = async (
   }
 
   // Update user
-  const [updatedUser] = await db
+  const updatedUserRecords = await db
     .update(users)
     .set(updateData)
     .where(eq(users.id, userId))
     .returning();
+
+  if (updatedUserRecords.length === 0) {
+    throw new AppError('User not found', HTTP_STATUS.NOT_FOUND);
+  }
+
+  const updatedUser = updatedUserRecords[0];
 
   logger.info('User updated by admin', {
     updatedFields: Object.keys(updateData),
@@ -209,14 +221,17 @@ export const updateUser = async (
  */
 export const deleteUser = async (userId: number): Promise<void> => {
   // Check if user exists
-  const [user] = await db
+  const userRecords = await db
     .select()
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
 
-  // User will always exist if query returns a result
-  // This check is for type safety
+  if (userRecords.length === 0) {
+    throw new AppError('User not found', HTTP_STATUS.NOT_FOUND);
+  }
+
+  const [user] = userRecords;
 
   // Delete user
   await db.delete(users).where(eq(users.id, userId));

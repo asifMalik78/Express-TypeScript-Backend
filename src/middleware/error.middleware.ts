@@ -82,43 +82,62 @@ export const globalErrorHandler = (
     });
   }
 
-  // Handle database connection errors
-  if (
+  // Handle database connection and query errors
+  // Check for various database error patterns without exposing sensitive details
+  const isDatabaseError =
     err.message.includes('Failed query') ||
     err.message.includes('fetch failed') ||
     err.message.includes('connect') ||
     err.message.includes('ECONNREFUSED') ||
-    err.message.includes('ENOTFOUND')
-  ) {
-    logger.error('Database connection error', {
+    err.message.includes('ENOTFOUND') ||
+    err.message.includes('ECONNRESET') ||
+    err.message.includes('ETIMEDOUT') ||
+    err.message.includes('database') ||
+    err.message.includes('connection') ||
+    err.message.includes('timeout') ||
+    err.message.includes('SQL') ||
+    err.message.includes('query') ||
+    err.name === 'PostgresError' ||
+    err.name === 'DatabaseError';
+
+  if (isDatabaseError) {
+    // Log full error details server-side only
+    logger.error('Database error', {
       error: err.message,
+      stack: err.stack,
       method: req.method,
       path: req.path,
       requestId,
+      // Log additional context if available
+      ...(err instanceof Error && 'code' in err && { code: err.code }),
     });
 
+    // Never expose database error details to clients
     return res.status(HTTP_STATUS.SERVICE_UNAVAILABLE).json({
       message:
-        process.env.NODE_ENV === 'production'
-          ? 'Database service is temporarily unavailable. Please try again later.'
-          : 'Database connection failed. Please check your DATABASE_URL and ensure the database is running.',
+        'Database service is temporarily unavailable. Please try again later.',
       requestId,
       status: 'error',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: err.message,
-      }),
     });
   }
 
   // Handle unknown/programming errors
+  // Always log full error details server-side
   logger.error('Unexpected error', {
     error: err.message,
     method: req.method,
     path: req.path,
     requestId,
     stack: err.stack,
+    // Log error name and code if available
+    ...(err instanceof Error && {
+      name: err.name,
+      ...('code' in err && { code: err.code }),
+    }),
   });
 
+  // Never expose error details to clients in production
+  // In development, show message but not stack traces or sensitive info
   return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
     message:
       process.env.NODE_ENV === 'production'
@@ -126,6 +145,9 @@ export const globalErrorHandler = (
         : err.message,
     requestId,
     status: 'error',
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
+    // Only show stack in development (database errors already handled above)
+    ...(process.env.NODE_ENV !== 'production' && {
+      stack: err.stack,
+    }),
   });
 };
